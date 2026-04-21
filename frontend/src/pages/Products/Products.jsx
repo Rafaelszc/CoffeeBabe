@@ -19,9 +19,10 @@ export const Products = () => {
   }, []);
 
   return (
-    <div className="bg-white/20 gap-8 py-10">
-      <div>
-
+    <div className="bg-white/20 flex flex-col gap-10 py-10">
+      <div className="px-20 flex flex-col gap-5">
+        <h2 className="text-5xl text-secondary-foreground block">Our products</h2>
+        <p className="text-secondary font-light tracking-wider">Discover specialty coffees, signature drinks, and desserts for every occasion.</p>
       </div>
       <div className="w-full flex items-center justify-center">
         <div className="flex flex-wrap w-4/5 justify-start">
