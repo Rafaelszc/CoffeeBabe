@@ -20,7 +20,7 @@ export const Navbar = () => {
   const currentPath = window.location.pathname
 
   return (
-    <header className="w-full flex items-center justify-between bg-primary/80 px-10 py-5 sticky top-0 z-50 backdrop:blur-md border-b">
+    <header className="w-full flex items-center justify-between bg-primary/80 px-10 py-5 sticky top-0 z-50 backdrop-blur-md border-b">
       <div>
         <Link className="flex items-center justify-between gap-5" to={"/"}>
             <Coffee style={{color: '#684d3b'}}/>
