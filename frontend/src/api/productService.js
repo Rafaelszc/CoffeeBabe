@@ -51,3 +51,34 @@ export const fetchProducts = async () => {
   }
 ]
 }
+
+export const fetchCart = async () => {
+  // mock data
+  return (
+    {
+      subtotal: 9.75,
+      tax: 0.78,
+      products: [{
+        id: 4,
+        imagePath: "src/assets/product-croissant.jpg",
+        title: "Croissant",
+        description: "A flaky, buttery pastry perfect for breakfast.",
+        price: 2.50
+      },
+      {
+        id: 5,
+        imagePath: "src/assets/product-brownie.jpg",
+        title: "Brownie",
+        description: "A rich, chocolatey treat perfect for dessert.",
+        price: 3.00
+      },
+      {
+        id: 6,
+        imagePath: "src/assets/product-iced-latte.jpg",
+        title: "Iced Latte",
+        description: "A refreshing cold coffee drink with espresso and milk.",
+        price: 4.25
+      },]
+    }
+  )
+}
