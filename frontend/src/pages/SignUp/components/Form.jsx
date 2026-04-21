@@ -20,7 +20,7 @@ export const Form = () => {
   }
 
   return (
-    <section className="flex items-center justify-center py-16 bg-primary/40">
+    <section className="flex items-center justify-center py-16 bg-white/40">
       <div className="w-full max-w-md bg-white p-10 rounded-4xl shadow-sm">
         <div className="flex flex-col items-center gap-2 mb-10">
           <Coffee className="text-secondary" />

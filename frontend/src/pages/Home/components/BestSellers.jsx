@@ -41,7 +41,7 @@ export const BestSellers = () => {
   const autoplay = useRef(Autoplay({ delay: 4500, stopOnInteraction: false }));
 
   return (
-    <section className="px-20 py-10 bg-primary/40">
+    <section className="px-20 py-10 bg-white/40">
       <div className="flex flex-col gap-3">
         <span className="text-secondary font-light tracking-widest ">Featured</span>
         <div className="flex w-full items-center justify-between">
@@ -67,9 +67,9 @@ export const BestSellers = () => {
             plugins={[autoplay.current]}
             className="w-full"
           >
-            <CarouselContent className="-ml-4">
+            <CarouselContent className="mx-4">
               {bestSellers.map((p) => (
-                <CarouselItem key={p.id} className="pl-4 sm:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={p.id} className="px-4 sm:basis-1/2 lg:basis-1/3">
                   <ProductCard {...p} />
                 </CarouselItem>
               ))}

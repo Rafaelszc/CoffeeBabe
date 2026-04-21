@@ -7,7 +7,7 @@ export const ProductCard = ({ id, imagePath, title, description, price }) => {
     }
 
     return (
-        <article className="overflow-hidden flex flex-col gap-5 rounded-2xl bg-white shadow-md m-5 pb-5 hover:scale-105 hover:shadow-lg transition-all duration-500 group">
+        <article style={{height: "500px", width: "350px"}} className="overflow-hidden flex flex-col gap-5 rounded-2xl bg-white shadow-md m-5 pb-5 hover:scale-105 hover:shadow-lg transition-all duration-500 group">
             <div className="overflow-hidden">
                 <img className="rounded-t-2xl group-hover:scale-110 delay-75 transition-transform duration-500" src={imagePath} alt={title} />
             </div>
