@@ -23,11 +23,11 @@ export const Navbar = () => {
     <header className="w-full flex items-center justify-between bg-primary/80 px-10 py-5 sticky top-0 z-50 backdrop-blur-md border-b">
       <div>
         <Link className="flex items-center justify-between gap-5" to={"/"}>
-            <Coffee style={{color: '#684d3b'}}/>
+            <Coffee className="text-secondary"/>
             <h1 className="font-semibold text-2xl ">CoffeeBabe</h1>     
         </Link>
       </div>
-      <nav>
+      <nav className="max-md:hidden">
         <ul className="flex items-center justify-between gap-10">
           {navItems.map((item) => (
             <li key={item.to}>
@@ -38,7 +38,7 @@ export const Navbar = () => {
           ))}
         </ul>
       </nav>
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-5 max-md:hidden">
         <div>
           <form className="relative" action="">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" style={{color: '#684d3b'}}/>
