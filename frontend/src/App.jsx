@@ -18,8 +18,8 @@ function App() {
           <Route path='/signup' element={<SignUp />} />
           <Route path='/products' element={<Products />} />
           <Route path='/checkout' element={<Checkout />} />
-          <Route path="/*" element={<NotFound />} />
         </Route>
+        <Route path="/*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )
