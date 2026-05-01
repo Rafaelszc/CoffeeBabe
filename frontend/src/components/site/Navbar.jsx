@@ -1,23 +1,27 @@
 import { Coffee, Search, ShoppingCart } from "lucide-react"
 import { Input } from "../ui/input"
-import { useState } from "react"
+import { useContext, useState } from "react"
 import { Link } from "react-router-dom"
-
-const navItems = [
-  {
-    to: '/', label: 'Home',
-  },
-  {
-    to: '/products', label: 'Products',
-  },
-  {
-    to: '/signin', label: 'Sign In',
-  }
-]
+import { AuthContext } from "@/context/AuthContext"
 
 export const Navbar = () => {
   const [query, setQuery] = useState('')
   const currentPath = window.location.pathname
+  const { hasUser } = useContext(AuthContext)
+
+  const navItems = [{
+      to: '/', label: 'Home',
+      },
+      {
+        to: '/products', label: 'Products',
+      }, hasUser
+      ? {
+        to: '/profile', label: 'Profile'
+      }
+      : {
+        to: '/signin', label: 'Sign In',
+      }
+    ]
 
   return (
     <header className="w-full flex items-center justify-between bg-white/70 px-10 py-5 sticky top-0 z-50 backdrop-blur-md border-b">
@@ -41,7 +45,7 @@ export const Navbar = () => {
       <div className="flex items-center gap-5 max-md:hidden">
         <div>
           <form className="relative" action="">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" style={{color: '#684d3b'}}/>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary"/>
             <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -50,8 +54,8 @@ export const Navbar = () => {
             />
           </form>
         </div>
-        <Link className="hover:bg-secondary/10 p-3 rounded-sm transition-colors duration-300" to="/checkout">
-          <ShoppingCart style={{color: '#684d3b'}}/>
+        <Link className="relative hover:bg-secondary/10 p-3 rounded-sm transition-colors duration-300" to="/checkout">
+          <ShoppingCart className="text-secondary"/>
         </Link>
       </div>
     </header>
