@@ -9,32 +9,40 @@ import { motion } from "framer-motion"
 const bestSellers = [
   {
     id: 1,
-    imagePath: "src/assets/product-cappuccino.jpg",
-    title: "Cappuccino",
-    description: "A creamy espresso-based drink with steamed milk.",
+    name: "Cappuccino",
+    image: {
+      url: "src/assets/product-cappuccino.jpg",
+      alt: "A creamy espresso-based drink with steamed milk.",
+    },
     price: 4.00
   },
   {
     id: 2,
-    imagePath: "src/assets/product-mocha.jpg",
-    title: "Mocha",
-    description: "A rich, chocolate-flavored coffee drink.",
+    name: "Mocha",
+    image: {
+      url: "src/assets/product-mocha.jpg",
+      alt: "A rich, chocolate-flavored coffee drink.",
+    },
     price: 4.50
   },
   {
     id: 3,
-    imagePath: "src/assets/product-cake.jpg",
-    title: "Cake",
-    description: "A delicious, moist cake perfect for any occasion.",
+    name: "Cake",
+    image: {
+      url: "src/assets/product-cake.jpg",
+      alt: "A delicious, moist cake perfect for any occasion.",
+    },
     price: 3.75
   },
   {
     id: 4,
-    imagePath: "src/assets/product-croissant.jpg",
-    title: "Croissant",
-    description: "A flaky, buttery pastry perfect for breakfast.",
+    name: "Croissant",
+    image: {
+      url: "src/assets/product-croissant.jpg",
+      alt: "A flaky, buttery pastry perfect for breakfast.",
+    },
     price: 2.50
-  }
+  },
 ]
 
 export const BestSellers = () => {
