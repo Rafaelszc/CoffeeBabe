@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button"
+import { AuthContext } from "@/context/AuthContext"
+import { useContext } from "react"
 import { Link } from "react-router-dom"
 
 export const HeroSection = () => {
+  const { hasUser } = useContext(AuthContext)
+
   return (
     <main className="relative overflow-hidden bg-primary">
         <div className="flex items-center py-28 px-20">
@@ -17,11 +21,14 @@ export const HeroSection = () => {
                             See menu
                         </Link>
                     </Button>
-                    <Button variant="outline" size="lg" className={"px-7 bg-white rounded-full transition-colors duration-300"}>
-                        <Link to="/signup">
-                            Sign Up
-                        </Link>
-                    </Button>
+                    {
+                        !hasUser &&
+                        <Button variant="outline" size="lg" className={"px-7 bg-white rounded-full transition-colors duration-300"}>
+                            <Link to="/signup">
+                                Sign Up
+                            </Link>
+                        </Button>
+                    }
                 </div>
             </div>
             <div className="w-full animate-scale-in max-md:hidden">
