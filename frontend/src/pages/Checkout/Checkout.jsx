@@ -7,8 +7,11 @@ export const Checkout = () => {
 
   useEffect(() => {
     const getCart = async () => {
-      const cartData = await fetchCart();
-      setCart(cartData);
+      const res = await fetchCart()
+
+      if (res.ok) setCart(res.data)
+      else console.error('Error fetching cart')
+    
     };
     getCart();
   }, []);

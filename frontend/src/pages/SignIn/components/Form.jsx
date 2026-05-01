@@ -5,16 +5,25 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signInSchema } from "@/schemas/userSchema"
 import { Coffee, Eye, EyeClosed } from "lucide-react"
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useContext, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { signInUser } from "@/api/userService"
+import { AuthContext } from "@/context/AuthContext"
 
 
 export const Form = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm({resolver: zodResolver(signInSchema)})
   const [seePassword, setSeePassword] = useState(false)
+  const navigate = useNavigate()
+  const { setHasUser } = useContext(AuthContext)
 
-  const onSubmit = (data) => {
-    alert(JSON.stringify(data))
+  const onSubmit = async (data) => {
+    const status = await signInUser(data)
+    if (status.ok) {
+      setHasUser(true)
+      navigate("/")
+    }
+      
     reset()
   }
 

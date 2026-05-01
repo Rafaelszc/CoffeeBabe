@@ -8,12 +8,11 @@ export const Products = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const data = await fetchProducts();
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
+      const res = await fetchProducts()
+
+      if (res.ok) setProducts(res.data)
+      else console.error('Error fetching products')
+
     };
     fetchData();
   }, []);

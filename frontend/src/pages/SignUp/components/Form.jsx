@@ -6,16 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { signUpSchema } from "@/schemas/userSchema"
 import { Coffee, Eye, EyeClosed } from "lucide-react"
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { signUpUser } from "@/api/userService"
 
 
 export const Form = () => {
   const { register, handleSubmit, reset, formState: { errors } } = useForm({resolver: zodResolver(signUpSchema)})
   const [seePassword, setSeePassword] = useState(false)
   const [seeConfirmPassword, setSeeConfirmPassword] = useState(false)
+  const navigate = useNavigate()
 
-  const onSubmit = (data) => {
-    alert(JSON.stringify(data))
+  const onSubmit = async (data) => {
+    const status = await signUpUser(data)
+    if (status.ok) navigate("/signin")
+    
     reset()
   }
 
