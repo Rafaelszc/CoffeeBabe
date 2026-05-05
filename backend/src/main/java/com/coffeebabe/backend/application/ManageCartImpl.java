@@ -22,12 +22,17 @@ public class ManageCartImpl implements ManageCartUseCase {
     @Override
     public void addToCard(UUID productId, UUID userId) {
         var product = productCrudGateway.getProductById(productId);
-        if (product != null) cartCrudGateway.saveItemToCart(product, userId);
+        if (product != null) cartCrudGateway.saveItemToCart(productId, userId);
     }
 
     @Override
     public void removeFromCart(UUID productId, UUID userId) {
         cartCrudGateway.removeItemFromCart(productId, userId);
+    }
+
+    @Override
+    public void decreaseItemQuantity(UUID productId, UUID userId) {
+        cartCrudGateway.removeFirstFromCart(productId, userId);
     }
 
     @Override

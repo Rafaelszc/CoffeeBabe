@@ -8,5 +8,6 @@ import java.util.UUID;
 public interface ManageCartUseCase {
     void addToCard(UUID productId, UUID userId);
     void removeFromCart(UUID productId, UUID userId);
+    void decreaseItemQuantity(UUID productId, UUID userId);
     List<Product> getCartProducts(UUID userId);
 }

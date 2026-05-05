@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CartCrudGateway {
-    void saveItemToCart(Product product, UUID userId);
+    void saveItemToCart(UUID productId, UUID userId);
     List<Product> getItemsFromCart(UUID userId);
     void removeItemFromCart(UUID productId, UUID userId);
+    void removeFirstFromCart(UUID productId, UUID userId);
 }
