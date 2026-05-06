@@ -45,7 +45,7 @@ public class ProductController {
 
         var response = new ApiResponseEntity<>(
                 true,
-                "Get all products successffuly",
+                "Get all products successfully",
                 products,
                 List.of()
         );
@@ -57,7 +57,7 @@ public class ProductController {
     public ResponseEntity<ApiResponseEntity<?>> findProductById(@RequestParam UUID id) {
         var response = new ApiResponseEntity<>(
                 true,
-                "Product find successffuly",
+                "Product find successfully",
                 productCrudUseCase.getProductById(id),
                 List.of()
         );

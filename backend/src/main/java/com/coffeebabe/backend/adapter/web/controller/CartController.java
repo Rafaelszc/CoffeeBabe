@@ -64,7 +64,7 @@ public class CartController {
     public ResponseEntity<ApiResponseEntity<?>> getAllItems(@RequestParam UUID userId) {
         var response = new ApiResponseEntity<>(
                 true,
-                "All items returned successfuly",
+                "All items returned successfully",
                 manageCartUseCase.getCartProducts(userId),
                 List.of()
         );
