@@ -1,6 +1,7 @@
 package com.coffeebabe.backend.application;
 
 import com.coffeebabe.backend.core.entities.Product;
+import com.coffeebabe.backend.core.exceptions.ProductNotFoundException;
 import com.coffeebabe.backend.core.gateways.CartCrudGateway;
 import com.coffeebabe.backend.core.gateways.ProductCrudGateway;
 import com.coffeebabe.backend.core.usecases.ManageCartUseCase;
@@ -23,6 +24,7 @@ public class ManageCartImpl implements ManageCartUseCase {
     public void addToCard(UUID productId, UUID userId) {
         var product = productCrudGateway.getProductById(productId);
         if (product != null) cartCrudGateway.saveItemToCart(productId, userId);
+        else throw new ProductNotFoundException("ProductNotFoundException");
     }
 
     @Override

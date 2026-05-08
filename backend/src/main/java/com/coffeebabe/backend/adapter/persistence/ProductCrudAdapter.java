@@ -1,6 +1,7 @@
 package com.coffeebabe.backend.adapter.persistence;
 
 import com.coffeebabe.backend.core.entities.Product;
+import com.coffeebabe.backend.core.exceptions.ProductNotFoundException;
 import com.coffeebabe.backend.core.gateways.ProductCrudGateway;
 import com.coffeebabe.backend.infra.persistence.jpa.ProductRepository;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,7 @@ public class ProductCrudAdapter implements ProductCrudGateway {
     @Override
     public Product getProductById(UUID productId) {
         return productRepository.findById(productId)
-                .orElse(null);
+                .orElseThrow(() -> new ProductNotFoundException("ProductNotFoundException"));
     }
 
     @Override

@@ -1,8 +1,8 @@
 package com.coffeebabe.backend.adapter.persistence;
 
 import com.coffeebabe.backend.core.entities.User;
+import com.coffeebabe.backend.core.exceptions.UserNotFoundException;
 import com.coffeebabe.backend.core.gateways.UserCrudGateway;
-import com.coffeebabe.backend.core.usecases.UserCrudUseCase;
 import com.coffeebabe.backend.infra.persistence.jpa.UserRepository;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +19,7 @@ public class UserCrudAdapter implements UserCrudGateway {
     @Override
     public User getUserById(UUID userId) {
         return userRepository.findById(userId)
-                .orElse(null);
+                .orElseThrow(() -> new UserNotFoundException("UserNotFoundException"));
     }
 
     @Override
