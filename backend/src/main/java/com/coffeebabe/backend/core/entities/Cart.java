@@ -1,6 +1,7 @@
 package com.coffeebabe.backend.core.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,8 +18,10 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank
     private UUID userId;
 
+    @NotBlank
     private UUID productId;
 
     public Cart(UUID userId, UUID productId) {

@@ -2,6 +2,7 @@ package com.coffeebabe.backend.core.entities;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,12 +19,16 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank
     private String name;
 
+    @NotBlank
     private String imageUrl;
 
+    @NotBlank
     private String description;
 
+    @NotBlank
     private double price;
 
     public Product(String name, String imageUrl, String description, double price) {
