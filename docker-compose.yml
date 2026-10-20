@@ -44,8 +44,8 @@ services:
     ports:
       - "127.0.0.1:5174:5174"
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
+      - ./frontend/src:/app/src:z
+      - ./frontend/public:/app/public:z
 
 volumes:
   pgdata:
