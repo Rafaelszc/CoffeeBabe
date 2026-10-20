@@ -4,9 +4,12 @@ import com.coffeebabe.backend.adapter.dtos.ApiResponseEntity;
 import com.coffeebabe.backend.adapter.dtos.SignInRequestDTO;
 import com.coffeebabe.backend.adapter.dtos.SignUpRequestDTO;
 import com.coffeebabe.backend.adapter.dtos.UserResponseDTO;
+import com.coffeebabe.backend.core.exceptions.TooManyAttemptsException;
 import com.coffeebabe.backend.core.usecases.UserAuthUseCase;
 import com.coffeebabe.backend.core.usecases.UserCrudUseCase;
+import com.coffeebabe.backend.infra.security.AttemptLimiter;
 import com.coffeebabe.backend.infra.security.SecurityConfig;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @RestController
@@ -26,22 +30,43 @@ import java.util.UUID;
 public class AuthController {
     private final UserAuthUseCase userAuthUseCase;
     private final UserCrudUseCase userCrudUseCase;
+    private final AttemptLimiter attemptLimiter;
     private final Duration expiration;
     private final boolean secureCookie;
+    private final int maxAttemptsPerIp;
+    private final int maxFailuresPerEmail;
+    private final Duration attemptWindow;
 
     public AuthController(UserAuthUseCase userAuthUseCase,
                           UserCrudUseCase userCrudUseCase,
+                          AttemptLimiter attemptLimiter,
                           @Value("${security.jwt.token.expirationHours}") long expirationHours,
-                          @Value("${security.jwt.cookie-secure}") boolean secureCookie) {
+                          @Value("${security.jwt.cookie-secure}") boolean secureCookie,
+                          @Value("${app.auth.max-attempts-per-ip}") int maxAttemptsPerIp,
+                          @Value("${app.auth.max-failures-per-email}") int maxFailuresPerEmail,
+                          @Value("${app.auth.attempt-window-minutes}") long attemptWindowMinutes) {
         this.userAuthUseCase = userAuthUseCase;
         this.userCrudUseCase = userCrudUseCase;
+        this.attemptLimiter = attemptLimiter;
         this.expiration = Duration.ofHours(expirationHours);
         this.secureCookie = secureCookie;
+        this.maxAttemptsPerIp = maxAttemptsPerIp;
+        this.maxFailuresPerEmail = maxFailuresPerEmail;
+        this.attemptWindow = Duration.ofMinutes(attemptWindowMinutes);
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<ApiResponseEntity<?>> signIn(@Valid @RequestBody SignInRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponseEntity<?>> signIn(@Valid @RequestBody SignInRequestDTO requestDTO,
+                                                       HttpServletRequest request) {
+        var emailKey = "signin-email:" + requestDTO.email().trim().toLowerCase(Locale.ROOT);
+        limit(request);
+        if (!attemptLimiter.tryAcquire(emailKey, maxFailuresPerEmail, attemptWindow)) {
+            throw new TooManyAttemptsException("TooManyAttemptsException");
+        }
+
         var token = userAuthUseCase.signIn(requestDTO.email(), requestDTO.password());
+        // only failures count against the email
+        attemptLimiter.reset(emailKey);
 
         var response = new ApiResponseEntity<>(
                 true,
@@ -55,7 +80,9 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponseEntity<?>> signUp(@Valid @RequestBody SignUpRequestDTO requestDTO) {
+    public ResponseEntity<ApiResponseEntity<?>> signUp(@Valid @RequestBody SignUpRequestDTO requestDTO,
+                                                       HttpServletRequest request) {
+        limit(request);
         userAuthUseCase.signUp(
                 requestDTO.username(),
                 requestDTO.email(),
@@ -97,6 +124,13 @@ public class AuthController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    // remote address only: X-Forwarded-For is client-controlled and there is no trusted proxy
+    private void limit(HttpServletRequest request) {
+        if (!attemptLimiter.tryAcquire("auth-ip:" + request.getRemoteAddr(), maxAttemptsPerIp, attemptWindow)) {
+            throw new TooManyAttemptsException("TooManyAttemptsException");
+        }
     }
 
     private ResponseCookie tokenCookie(String value, Duration maxAge) {

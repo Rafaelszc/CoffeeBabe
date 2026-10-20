@@ -22,7 +22,9 @@ export const Form = () => {
       await refreshUser()
       navigate(location.state?.from ?? "/", { replace: true })
     } catch (error) {
-      toast.error(error.status === 401 ? "E-mail ou senha inválidos." : "Não foi possível entrar agora. Tente novamente.")
+      if (error.status === 401) toast.error("E-mail ou senha inválidos.")
+      else if (error.status === 429) toast.error("Muitas tentativas. Aguarde alguns minutos e tente de novo.")
+      else toast.error("Não foi possível entrar agora. Tente novamente.")
       resetField("password")
     }
   }

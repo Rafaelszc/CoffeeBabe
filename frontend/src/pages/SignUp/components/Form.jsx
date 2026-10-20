@@ -22,6 +22,7 @@ export const Form = () => {
       // 400 sem erros de campo = e-mail ou nome de usuário já cadastrado
       if (error.status === 400 && error.errors?.length === 0) toast.error("Já existe uma conta com esse e-mail ou nome de usuário.")
       else if (error.status === 400) toast.error("Confira os dados informados.")
+      else if (error.status === 429) toast.error("Muitas tentativas. Aguarde alguns minutos e tente de novo.")
       else toast.error("Não foi possível criar a conta agora. Tente novamente.")
     }
   }

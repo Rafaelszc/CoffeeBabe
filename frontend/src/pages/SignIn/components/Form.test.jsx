@@ -51,6 +51,15 @@ describe("SignIn form", () => {
     expect(refreshUser).not.toHaveBeenCalled()
   })
 
+  it("tells the user to wait when sign-in is rate limited", async () => {
+    signInUser.mockRejectedValue(new ApiError("Too many attempts, try again later!", 429))
+    renderForm()
+
+    await fillAndSubmit("ana@mail.com", "errada")
+
+    expect(toast.error).toHaveBeenCalledWith("Muitas tentativas. Aguarde alguns minutos e tente de novo.")
+  })
+
   it("validates the form before calling the API", async () => {
     signInUser.mockClear()
     renderForm()
