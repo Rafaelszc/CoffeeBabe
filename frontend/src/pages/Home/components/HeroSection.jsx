@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Container } from "@/components/site/Container"
-import { AuthContext } from "@/context/AuthContext"
+import { useAuth } from "@/context/auth"
 import { motion } from "framer-motion"
-import { useContext } from "react"
 import { Link } from "react-router-dom"
 import heroImage from "@/assets/hero-coffee.jpg"
 
@@ -11,7 +10,7 @@ const MotionDiv = motion.div
 const ease = [0.16, 1, 0.3, 1]
 
 export const HeroSection = () => {
-  const { hasUser } = useContext(AuthContext)
+  const { hasUser } = useAuth()
 
   return (
     <section className="overflow-hidden">

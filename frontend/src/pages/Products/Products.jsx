@@ -6,44 +6,56 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Pager } from "@/components/site/Pager";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const MotionDiv = motion.div
 
-const normalize = (text = "") => text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()
-
 export const Products = () => {
-  const [products, setProducts] = useState([]);
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
   const category = searchParams.get("category") ?? "";
+  const page = Number(searchParams.get("page") ?? 0);
 
+  // Busca no servidor; o atraso evita uma requisição por tecla digitada.
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetchProducts()
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      setLoading(true)
+      try {
+        const data = await fetchProducts({ q: query, category, page })
+        if (!cancelled) {
+          setResult(data)
+          setFailed(false)
+        }
+      } catch {
+        if (!cancelled) setFailed(true)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, 250)
 
-      if (res.ok) setProducts(res.data)
-      else console.error('Error fetching products')
-      setLoading(false)
-    };
-    fetchData();
-  }, []);
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query, category, page]);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams)
-    if (value) next.set(key, value)
+    if (value || value === 0) next.set(key, value)
     else next.delete(key)
+    // novo filtro volta para a primeira página
+    if (key !== "page") next.delete("page")
     setSearchParams(next, { replace: true })
   }
 
-  // Filtro local até a busca da API existir (T6.3).
-  const visible = useMemo(() => products.filter((p) => {
-    const text = normalize(`${p.name} ${p.description ?? p.image?.alt ?? ""}`)
-    return (!category || p.category === category) && text.includes(normalize(query))
-  }), [products, query, category])
+  const visible = result?.items ?? []
 
   const chips = [{ value: "", label: "Todos" }, ...CATEGORIES]
 
@@ -83,7 +95,7 @@ export const Products = () => {
             type="search"
             value={query}
             onChange={(e) => updateParam("q", e.target.value)}
-            placeholder="Buscar pelo nome"
+            placeholder="Buscar por nome ou descrição"
             className="rounded-full pl-10"
           />
         </div>
@@ -94,6 +106,10 @@ export const Products = () => {
           <div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <ProductCard key={i} isLoading />)}
           </div>
+        ) : failed ? (
+          <p className="rounded-2xl bg-secondary px-6 py-16 text-center text-muted-foreground">
+            Não foi possível carregar o cardápio agora. Tente novamente em instantes.
+          </p>
         ) : visible.length === 0 ? (
           <div className="flex flex-col items-center gap-4 rounded-2xl bg-secondary px-6 py-16 text-center">
             <p className="text-lg font-medium">Nenhum produto encontrado</p>
@@ -116,6 +132,9 @@ export const Products = () => {
               </MotionDiv>
             ))}
           </div>
+        )}
+        {!loading && !failed && (
+          <Pager page={page} totalPages={result?.totalPages ?? 0} onChange={(next) => updateParam("page", next)} />
         )}
       </div>
     </Container>

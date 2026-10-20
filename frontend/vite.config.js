@@ -16,5 +16,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     }
+  },
+  // globals: true lets Testing Library clean up the DOM after each test
+  test: {
+    environment: "jsdom",
+    globals: true,
   }
 })

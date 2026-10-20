@@ -1,9 +1,9 @@
 import { Coffee, Search, ShoppingBag, User } from "lucide-react"
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
-import { useContext, useState } from "react"
+import { useState } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
-import { AuthContext } from "@/context/AuthContext"
+import { useAuth } from "@/context/auth"
 import { Container } from "./Container"
 import { ThemeToggle } from "./ThemeToggle"
 import { cn } from "@/lib/utils"
@@ -16,7 +16,7 @@ const navItems = [
 export const Navbar = () => {
   const [query, setQuery] = useState("")
   const navigate = useNavigate()
-  const { hasUser } = useContext(AuthContext)
+  const { hasUser } = useAuth()
 
   const handleSearch = (e) => {
     e.preventDefault()

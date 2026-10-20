@@ -18,7 +18,7 @@ export const BestSellers = () => {
     const fetchProducts = async () => {
       try {
         const data = await fetchBestSellers()
-        setProducts(Array.isArray(data?.data) ? data.data : [])
+        setProducts(Array.isArray(data) ? data : [])
       } catch {
         setFailed(true)
       } finally {
