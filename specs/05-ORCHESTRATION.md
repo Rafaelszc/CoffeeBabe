@@ -33,7 +33,7 @@ O backend só inicia depois que o `db` está saudável. O Flyway aplica as migra
 
 - Os bind mounts do frontend (`src/`, `public/`) usam o label `:z`. Sem ele, hosts com SELinux em `Enforcing` (Fedora) negam a leitura dentro do contêiner e o Vite falha com `EACCES`. O `:z` reetiqueta só esses dois diretórios e é ignorado em hosts sem SELinux.
 - `JWT_SECRET` precisa ter pelo menos 32 bytes (HS256); com menos, o backend não sobe. `ADMIN_EMAIL`/`ADMIN_PASSWORD` criam o admin inicial.
-- O frontend lê `import.meta.env.BASE_URL` e hardcoda `http://localhost:8080`; `VITE_API_URL` já é passada pelo Compose para quando o cliente HTTP único existir (`feature/frontend-api-integration`).
+- O frontend fala com o backend por `VITE_API_URL` (passada pelo Compose; padrão `http://localhost:8080`).
 - O CORS do backend usa `CORS_ALLOWED_ORIGIN` (padrão `http://localhost:5174`, o mesmo valor publicado pelo Compose).
 - Não há healthcheck do backend: sem Spring Actuator no `pom.xml`.
 

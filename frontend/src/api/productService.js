@@ -1,41 +1,18 @@
-import { cartData, productsData } from "@/data/mockData"
-import { toast } from "sonner"
+import { api, query } from "./apiClient"
 
-const BASE_URL = import.meta.env.BASE_URL || "http://localhost:8080"
+export const fetchProducts = ({ q, category, page = 0, size = 12 } = {}) =>
+  api(`/api/product?${query({ q, category, page, size })}`)
 
-export const fetchProducts = async () => {
-    // mock data
-    return {ok: true, data: productsData}
-}
+export const fetchBestSellers = () => api("/api/product/get/best")
 
-export const fetchCart = async () => {
-  const res = await fetch("http://localhost:8080/api/cart",
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    })
+export const createProduct = (product) => api("/api/product", { method: "POST", body: product })
 
-  const data = await res.json()
+export const updateProduct = (id, product) => api(`/api/product/${id}`, { method: "PUT", body: product })
 
-  return data
-}
+export const deleteProduct = (id) => api(`/api/product/${id}`, { method: "DELETE" })
 
-export const fetchBestSellers = async () => {
-  const res = await fetch(`${BASE_URL}/api/product/get/best`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    }
-  )
-  const data = await res.json()
-
-  return data
-}
-
-export const addToCart = async (product) => {
-  toast.success(`${product.name} adicionado ao carrinho`)
-}
-
-export const removeFromCart = async (product) => {
-  toast.success(`${product.name} removido do carrinho`)
+export const uploadProductImage = (id, file) => {
+  const form = new FormData()
+  form.append("file", file)
+  return api(`/api/product/${id}/image`, { method: "POST", form })
 }

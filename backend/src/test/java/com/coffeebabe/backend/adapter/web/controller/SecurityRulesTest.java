@@ -8,6 +8,8 @@ import com.coffeebabe.backend.core.usecases.OrderUseCase;
 import com.coffeebabe.backend.core.usecases.ProductCrudUseCase;
 import com.coffeebabe.backend.core.usecases.UserAuthUseCase;
 import com.coffeebabe.backend.core.usecases.UserCrudUseCase;
+import com.coffeebabe.backend.core.exceptions.UserNotAuthorizedException;
+import com.coffeebabe.backend.infra.security.AttemptLimiter;
 import com.coffeebabe.backend.infra.security.SecurityConfig;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
@@ -33,11 +35,12 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, AttemptLimiter.class})
 class SecurityRulesTest {
     private static final String PRODUCT_JSON = """
             {"name":"Latte","description":"d","price":5.00,"category":"HOT_COFFEE"}""";
@@ -128,6 +131,44 @@ class SecurityRulesTest {
                         containsString("Path=/"),
                         not(containsString("Secure")))))
                 .andExpect(content().string(not(containsString("the-token"))));
+    }
+
+    @Test
+    void repeatedFailedSignInsForAnEmailAre429() throws Exception {
+        when(userAuthUseCase.signIn("victim@mail.com", "wrong-pass")).thenThrow(new UserNotAuthorizedException("x"));
+        var body = "{\"email\":\"Victim@mail.com\",\"password\":\"wrong-pass\"}";
+
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON).content(body.replace("Victim", "victim")))
+                    .andExpect(status().isUnauthorized());
+        }
+        // case differences in the email do not open a new window
+        mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void successfulSignInResetsTheEmailCount() throws Exception {
+        when(userAuthUseCase.signIn("bia@mail.com", "wrong-pass")).thenThrow(new UserNotAuthorizedException("x"));
+        when(userAuthUseCase.signIn("bia@mail.com", "senha-forte")).thenReturn("t");
+        var wrong = "{\"email\":\"bia@mail.com\",\"password\":\"wrong-pass\"}";
+        var right = "{\"email\":\"bia@mail.com\",\"password\":\"senha-forte\"}";
+
+        for (int round = 0; round < 2; round++) {
+            for (int i = 0; i < 4; i++) {
+                mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON).content(wrong))
+                        .andExpect(status().isUnauthorized());
+            }
+            mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON).content(right))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Test
+    void securityHeadersAreSent() throws Exception {
+        mockMvc.perform(get("/api/product/get/best"))
+                .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"));
     }
 
     @Test

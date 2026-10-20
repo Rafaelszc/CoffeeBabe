@@ -45,7 +45,7 @@ Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SEC
 - SEC-2: senhas com BCrypt (custo ≥ 10). Política mínima: 8 caracteres. A validação de tamanho fica no DTO de entrada, não na entidade que guarda o hash.
 - SEC-3: JWT assinado (HS256 com segredo de pelo menos 256 bits, ou RS256), contendo `sub` (id do usuário), `role`, `iat`, `exp`. Expiração curta (hoje 3 horas é o valor configurado; revisar).
 - SEC-4: cookie `HttpOnly`, `SameSite=Lax`, `Secure` apenas quando houver HTTPS (propriedade configurável; em localhost fica desligado), `Path=/`, `Max-Age` igual à expiração do token.
-- SEC-5: login e cadastro com limite de tentativas por IP e por e-mail.
+- SEC-5: login e cadastro com limite de tentativas por IP e por e-mail. Implementado em `AttemptLimiter`: 30 requisições de login/cadastro por IP e 5 logins falhos por e-mail a cada 15 minutos (configurável em `app.auth.*`); excedeu → `429`. O sucesso zera a contagem do e-mail. Em memória, por instância. Contrapartida aceita: alguém pode travar o login de um e-mail por 15 minutos errando a senha de propósito.
 - SEC-6: login devolve a mesma mensagem e o mesmo status para e-mail inexistente e senha errada.
 
 ### Autorização
@@ -60,12 +60,13 @@ Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SEC
 - SEC-13: upload de imagem só por `ADMIN`; limite de 2 MB (também configurado em `spring.servlet.multipart`); tipo validado pela assinatura do conteúdo (JPEG, PNG, WebP), nunca pelo nome ou pelo `Content-Type` enviado; a imagem é servida com `Content-Type` fixado pelo servidor e `X-Content-Type-Options: nosniff`; o nome do arquivo enviado nunca é usado como caminho. SVG não é aceito (pode conter script). O frontend nunca renderiza HTML vindo do backend.
 
 ### Configuração e infraestrutura
-- SEC-14: segredos (`JWT_SECRET`, `POSTGRES_PASSWORD`, `DB_URL`, `DB_USER`) vêm de variáveis de ambiente (no Compose, de um arquivo `.env` local não versionado, com `.env.example` versionado); `application.properties` mantém só placeholders com valores de desenvolvimento óbvios (`${JWT_SECRET:dev-only-change-me}`) ou um perfil `dev` separado. `.env` do frontend e do backend ficam no `.gitignore`.
+- SEC-14: segredos (`JWT_SECRET`, `POSTGRES_PASSWORD`, `DB_URL`, `DB_USER`) vêm de variáveis de ambiente (no Compose, de um arquivo `.env` local não versionado, com `.env.example` versionado); `application.properties` não tem valor padrão para `JWT_SECRET` (um segredo conhecido permitiria assinar tokens `ADMIN`); os testes usam um segredo próprio em `src/test/resources/config/application.properties`. `.env` do frontend e do backend ficam no `.gitignore`.
 - SEC-15: CORS com origem vinda de configuração (não fixa em código), `allowCredentials(true)` somente para essa origem, métodos incluindo `PATCH` e `PUT` quando usados.
-- SEC-16: cabeçalhos de segurança básicos (`X-Content-Type-Options`, `Referrer-Policy`). CSP e HSTS ficam como melhoria opcional, já que não há deploy.
+- SEC-16: cabeçalhos de segurança básicos (`X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`), enviados pelo Spring Security. CSP e HSTS ficam como melhoria opcional, já que não há deploy.
 - SEC-17: HTTPS não é exigido (só localhost). Se o projeto for hospedado um dia, torna-se obrigatório e `Secure` e HSTS passam a valer.
 - SEC-18: logs sem senha, token nem endereço.
-- SEC-19: dependências verificadas (`./mvnw dependency-check` ou Dependabot) e `bun audit` no frontend antes de cada release.
+- SEC-19: dependências verificadas antes de cada release: `bun audit` no frontend e, no backend, as dependências de runtime consultadas no osv.dev (lista de `./mvnw dependency:list -DincludeScope=runtime`).
+  - Estado em 2026-10-20: backend sem alertas (Spring Boot 4.0.8 com Tomcat 11.0.27, Jackson 2.21.8 e 3.1.8 sobrescritos no `pom.xml` até um release do Boot trazê-los). Frontend com 1 alerta aceito: `braces` 3.0.3 (GHSA-vfj7-8cjw-p6xm, DoS por padrão aninhado), só na CLI do `shadcn` usada em desenvolvimento e sem versão corrigida publicada; não chega ao bundle do navegador.
 
 ## 4. Critérios de aceite de segurança por módulo
 

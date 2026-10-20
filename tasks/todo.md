@@ -113,27 +113,27 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
   - Verify: `bun run build`; capturas em 390px e 1280px nos dois temas; grep sem travessões, `h-screen` ou fontes antigas
   - Files: `index.css`, `index.html`, `main.jsx`, `components/site/*`, `pages/*`
 
-- [ ] T6.1 Cliente HTTP único
+- [x] T6.1 Cliente HTTP único
   - Acceptance: um `apiClient` com `VITE_API_URL`, `credentials: 'include'` e tratamento do envelope; sem URL fixa nos serviços
   - Verify: `bun run lint`; teste com `fetch` simulado
   - Files: `src/api/apiClient.js`, `productService.js`, `userService.js`
-- [ ] T6.2 Auth real
+- [x] T6.2 Auth real
   - Acceptance: `signInUser`/`signUpUser` chamam a API; `AuthContext` usa `/me`; sem `document.cookie` nem `alert`; guarda de rota em `/checkout`, `/profile`, `/orders`
   - Verify: fluxo manual cadastro → login → logout; teste de componente do formulário
   - Files: `AuthContext.jsx`, `userService.js`, `SignIn`, `SignUp`, `App.jsx`
-- [ ] T6.3 Catálogo com busca, categoria, paginação e imagem do banco
+- [x] T6.3 Catálogo com busca, categoria, paginação e imagem do banco
   - Acceptance: `Products` com campo de busca, filtro `HOT_COFFEE`/`COLD_COFFEE`/`SNACK`, paginação; imagens via `/api/product/{id}/image`; `mockData` deixa de ser usado
   - Verify: fluxo manual; `bun run lint`
   - Files: `Products.jsx`, `ProductCard.jsx`, `BestSellers.jsx`, `productService.js`
-- [ ] T6.4 Carrinho e checkout
+- [x] T6.4 Carrinho e checkout
   - Acceptance: adicionar, diminuir, remover; resumo com `R$`, imposto, entrega; escolha de retirada/entrega e endereço; finalizar cria o pedido
   - Verify: fluxo manual de ponta a ponta
   - Files: `Checkout.jsx`, `ProductCartCard.jsx`, `productService.js`
-- [ ] T6.5 Pedidos e administração
+- [x] T6.5 Pedidos e administração
   - Acceptance: tela de pedidos do cliente com cancelamento; telas de admin para produtos (com upload) e status de pedidos
   - Verify: fluxo manual com os dois papéis
   - Files: novas páginas em `src/pages`, `App.jsx`
-- [ ] T6.6 Testes de frontend
+- [x] T6.6 Testes de frontend
   - Acceptance: Vitest + Testing Library; testes de formulário de login e do carrinho
   - Verify: `bun run test`
   - Files: `package.json`, `vite.config.js`, testes

@@ -1,9 +1,15 @@
 import { Plus } from "lucide-react"
 import { Button } from "../ui/button"
-import { addToCart } from "@/api/productService"
+import { addToCart } from "@/api/cartService"
 import { formatPrice, resolveImage } from "@/lib/format"
+import { useAuth } from "@/context/auth"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
-export const ProductCard = ({ id, name, imageUrl, image, description, price, isLoading }) => {
+export const ProductCard = ({ id, name, imageUrl, description, price, isLoading }) => {
+  const { hasUser } = useAuth()
+  const navigate = useNavigate()
+
   if (isLoading) {
     return (
       <article aria-hidden="true" className="flex animate-pulse flex-col gap-4">
@@ -15,12 +21,18 @@ export const ProductCard = ({ id, name, imageUrl, image, description, price, isL
     )
   }
 
-  // O mock usa image.{url,alt}; a API usa imageUrl/description.
-  const src = resolveImage(imageUrl ?? image?.url)
-  const text = description ?? image?.alt
-
-  const handleAddToCart = () => {
-    addToCart({ id, name, imageUrl: src, description: text, price })
+  const handleAddToCart = async () => {
+    if (!hasUser) {
+      toast.info("Entre para montar seu carrinho.")
+      navigate("/signin")
+      return
+    }
+    try {
+      await addToCart(id)
+      toast.success(`${name} adicionado ao carrinho`)
+    } catch {
+      toast.error("Não foi possível adicionar agora. Tente novamente.")
+    }
   }
 
   return (
@@ -28,14 +40,16 @@ export const ProductCard = ({ id, name, imageUrl, image, description, price, isL
       <div className="overflow-hidden rounded-2xl bg-secondary">
         <img
           className="aspect-[4/3] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-          src={src}
+          src={resolveImage(imageUrl)}
           alt={name}
           loading="lazy"
+          // produto ainda sem imagem: mostra só o fundo
+          onError={(e) => { e.currentTarget.style.visibility = "hidden" }}
         />
       </div>
       <div className="flex flex-1 flex-col gap-1.5">
         <h3 className="text-lg font-medium">{name}</h3>
-        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
+        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
       </div>
       <div className="flex items-center justify-between gap-3">
         <span className="text-base font-medium tabular-nums">{formatPrice(price)}</span>

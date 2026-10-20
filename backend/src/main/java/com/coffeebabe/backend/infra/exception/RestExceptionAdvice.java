@@ -100,6 +100,18 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ApiResponseEntity<?>> tooManyAttemptsException(TooManyAttemptsException exception) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Too many attempts, try again later!",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiResponseEntity<?>> userAlreadyExistsException(UserAlreadyExistsException exception) {
         var response = new ApiResponseEntity<>(

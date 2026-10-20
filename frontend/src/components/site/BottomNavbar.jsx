@@ -1,11 +1,10 @@
 import { Coffee, Home, LogIn, ShoppingBag, User } from "lucide-react"
-import { useContext } from "react"
 import { NavLink } from "react-router-dom"
-import { AuthContext } from "@/context/AuthContext"
+import { useAuth } from "@/context/auth"
 import { cn } from "@/lib/utils"
 
 export const BottomNavbar = () => {
-  const { hasUser } = useContext(AuthContext)
+  const { hasUser } = useAuth()
 
   const navItems = [
     { to: "/", label: "Início", icon: Home },

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.6</version>
+		<version>4.0.8</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.coffeebabe</groupId>
@@ -28,6 +28,11 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+		<!-- shortcut: patch-level overrides of the Boot BOM for advisories (GHSA-9xv2-5v5q-p794, GHSA-gcx9-497g-6cp6,
+		     GHSA-h3x4-894j-xpx5 in Tomcat; GHSA-cxp5-3px4-pw24 and others in Jackson); drop them once a Boot release ships these versions -->
+		<tomcat.version>11.0.27</tomcat.version>
+		<jackson-2-bom.version>2.21.8</jackson-2-bom.version>
+		<jackson-bom.version>3.1.8</jackson-bom.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -47,10 +52,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
+		<!-- Flyway 10+ needs the database module; version comes from the Spring Boot BOM -->
 		<dependency>
 			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
-			<version>9.8.1</version>
+			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
