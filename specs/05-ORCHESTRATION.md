@@ -15,6 +15,7 @@ docker compose down -v      # para e apaga o volume do banco
 |---|---|---|
 | `db` | `postgres:17`, volume `pgdata`, healthcheck `pg_isready` | `127.0.0.1:5433` (`DB_HOST_PORT`) |
 | `backend` | build multi-stage: `eclipse-temurin:25-jdk` compila, `25-jre` executa como usuário sem privilégios | `http://localhost:8080` |
+| `redis` | `redis:8-alpine`, senha `REDIS_PASSWORD`, sem persistência | sem porta no host (só a rede do Compose) |
 | `frontend` | `oven/bun:1`, Vite em modo dev, `src/` e `public/` montados para hot reload | `http://localhost:5174` |
 
 O backend só inicia depois que o `db` está saudável. O Flyway aplica as migrations na primeira subida.
@@ -26,6 +27,7 @@ O backend só inicia depois que o `db` está saudável. O Flyway aplica as migra
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Criação do banco e credenciais do backend |
 | `DB_HOST_PORT` | Porta do banco no host (padrão 5433) |
 | `JWT_SECRET` | Vira `SECURITY_JWT_TOKEN` no backend |
+| `REDIS_PASSWORD` | Senha do Redis (obrigatória), usada pelo backend |
 
 `POSTGRES_PASSWORD` e `JWT_SECRET` não têm valor padrão: o Compose se recusa a subir sem eles. `.env` está no `.gitignore` da raiz.
 

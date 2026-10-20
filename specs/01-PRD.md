@@ -45,10 +45,12 @@ Cada módulo vira uma ou mais branches `feature/<nome>` a partir de `develop` (v
 - RF-ID-3: logout limpa o cookie.
 - RF-ID-4: `GET /api/auth/me` devolve o usuário logado (sem senha).
 - RF-ID-5: remover `POST /api/user/create` público; criação de `ADMIN` só por seed/migration ou por outro `ADMIN`.
+- RF-ID-6: sessão renovável ([ADR-0008](adr/0008-refresh-token-redis.md)). O token de acesso dura 15 minutos; `POST /api/auth/refresh` troca o refresh token (7 dias, de uso único) por um novo par. O logout revoga o refresh token do navegador atual. O frontend renova a sessão sozinho quando recebe `401`.
 
 Critérios de aceite:
 - Senha nunca aparece em resposta nem em log, e é armazenada com BCrypt.
 - Requisição sem cookie válido a rota protegida retorna `401`; papel insuficiente retorna `403`.
+- Refresh token usado uma segunda vez (fora da janela de 30 s) revoga todas as sessões do usuário; refresh token revogado ou expirado retorna `401`.
 
 ### 3.2 `catalog`
 

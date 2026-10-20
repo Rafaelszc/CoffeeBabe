@@ -43,10 +43,11 @@ Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SEC
 ### Autenticação e sessão
 - SEC-1: Spring Security com `SecurityFilterChain` que nega por padrão; rotas públicas listadas explicitamente (`/api/auth/**`, leitura de `/api/product/**`).
 - SEC-2: senhas com BCrypt (custo ≥ 10). Política mínima: 8 caracteres. A validação de tamanho fica no DTO de entrada, não na entidade que guarda o hash.
-- SEC-3: JWT assinado (HS256 com segredo de pelo menos 256 bits, ou RS256), contendo `sub` (id do usuário), `role`, `iat`, `exp`. Expiração curta (hoje 3 horas é o valor configurado; revisar).
-- SEC-4: cookie `HttpOnly`, `SameSite=Lax`, `Secure` apenas quando houver HTTPS (propriedade configurável; em localhost fica desligado), `Path=/`, `Max-Age` igual à expiração do token.
+- SEC-3: JWT assinado (HS256 com segredo de pelo menos 256 bits, ou RS256), contendo `sub` (id do usuário), `role`, `iat`, `exp`. Expiração de 15 minutos (`security.jwt.token.expirationMinutes`); a sessão continua pelo refresh token (SEC-20).
+- SEC-4: cookie `access_token` com `HttpOnly`, `SameSite=Lax`, `Secure` apenas quando houver HTTPS (propriedade configurável; em localhost fica desligado), `Path=/`, `Max-Age` igual à expiração do token. Cookie `refresh_token` com `HttpOnly`, `SameSite=Strict`, `Path=/api/auth` (só vai para as rotas de autenticação) e `Max-Age` de 7 dias.
 - SEC-5: login e cadastro com limite de tentativas por IP e por e-mail. Implementado em `AttemptLimiter`: 30 requisições de login/cadastro por IP e 5 logins falhos por e-mail a cada 15 minutos (configurável em `app.auth.*`); excedeu → `429`. O sucesso zera a contagem do e-mail. Em memória, por instância. Contrapartida aceita: alguém pode travar o login de um e-mail por 15 minutos errando a senha de propósito.
 - SEC-6: login devolve a mesma mensagem e o mesmo status para e-mail inexistente e senha errada.
+- SEC-20: refresh token aleatório de 256 bits (`SecureRandom`), guardado no Redis só como hash SHA-256 com validade de 7 dias. Cada uso o invalida e emite outro (rotação). Reuso de um token já trocado, depois de 30 s, é tratado como roubo e revoga todas as sessões do usuário. O Redis exige senha (`REDIS_PASSWORD`) e não publica porta no host.
 
 ### Autorização
 - SEC-7: `userId` nunca vem de parâmetro, caminho ou corpo em rotas de carrinho, pedido ou perfil.
@@ -78,6 +79,6 @@ Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SEC
 ## 5. Perguntas em aberto
 
 1. Haverá recuperação de senha por e-mail? (adiciona serviço de e-mail e token de uso único)
-2. Haverá refresh token, ou sessão simples que expira e exige novo login?
+2. (Resolvida) Refresh token com rotação, guardado no Redis ([ADR-0008](adr/0008-refresh-token-redis.md)).
 3. (Resolvida) Sistema só em localhost, sem dados reais de clientes: LGPD fora de escopo, mas os dados de endereço continuam tratados como se fossem reais.
 4. (Resolvida) Mesma máquina, portas diferentes: `SameSite=Lax` basta.
