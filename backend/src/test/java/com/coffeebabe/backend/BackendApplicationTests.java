@@ -15,9 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.UUID;
@@ -37,8 +40,18 @@ class BackendApplicationTests {
 	@ServiceConnection
 	static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:17");
 
+	// refresh tokens (ADR-0008)
+	static GenericContainer<?> redis = new GenericContainer<>("redis:8-alpine").withExposedPorts(6379);
+
 	static {
 		postgres.start();
+		redis.start();
+	}
+
+	@DynamicPropertySource
+	static void redisProperties(DynamicPropertyRegistry registry) {
+		registry.add("spring.data.redis.host", redis::getHost);
+		registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
 	}
 
 	@Autowired MockMvc mockMvc;
@@ -320,6 +333,40 @@ class BackendApplicationTests {
 				.andExpect(status().isCreated())
 				.andReturn().getResponse().getContentAsString();
 		return JsonPath.read(body, "$.data.id");
+	}
+
+	@Test
+	void refreshRotatesAndReuseRevokesEverySession() throws Exception {
+		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"username\":\"ivan\",\"email\":\"ivan@mail.com\",\"password\":\"senha-forte\"}"))
+				.andExpect(status().isCreated());
+		var signIn = mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"email\":\"ivan@mail.com\",\"password\":\"senha-forte\"}"))
+				.andExpect(status().isOk())
+				.andReturn().getResponse();
+		var firstRefresh = signIn.getCookie(SecurityConfig.REFRESH_COOKIE);
+		assertThat(firstRefresh.getPath()).isEqualTo("/api/auth");
+		assertThat(firstRefresh.isHttpOnly()).isTrue();
+
+		// rotation: the old token is spent and a working pair comes back
+		var rotated = mockMvc.perform(post("/api/auth/refresh").cookie(firstRefresh))
+				.andExpect(status().isOk())
+				.andReturn().getResponse();
+		var secondRefresh = rotated.getCookie(SecurityConfig.REFRESH_COOKIE);
+		assertThat(secondRefresh.getValue()).isNotEqualTo(firstRefresh.getValue());
+		mockMvc.perform(get("/api/auth/me").cookie(rotated.getCookie(SecurityConfig.TOKEN_COOKIE)))
+				.andExpect(jsonPath("$.data.email").value("ivan@mail.com"));
+
+		// replaying the spent token (grace is 0 in tests) kills the newer one as well
+		mockMvc.perform(post("/api/auth/refresh").cookie(firstRefresh)).andExpect(status().isUnauthorized());
+		mockMvc.perform(post("/api/auth/refresh").cookie(secondRefresh)).andExpect(status().isUnauthorized());
+
+		// sign out revokes the token of this browser
+		var again = mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"email\":\"ivan@mail.com\",\"password\":\"senha-forte\"}"))
+				.andReturn().getResponse().getCookie(SecurityConfig.REFRESH_COOKIE);
+		mockMvc.perform(post("/api/auth/signout").cookie(again)).andExpect(status().isOk());
+		mockMvc.perform(post("/api/auth/refresh").cookie(again)).andExpect(status().isUnauthorized());
 	}
 
 	private Cookie signUpAndSignIn(String name) throws Exception {

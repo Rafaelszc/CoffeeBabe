@@ -148,3 +148,22 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
   - Acceptance: soma de unidades de pedidos `COMPLETED`, top 6, empate pelo nome, completado com o catálogo
   - Verify: teste de integração com pedidos `COMPLETED`, `PENDING` e `CANCELLED`
   - Files: `ProductRepository.java`, `ProductCrudGateway.java`, `ProductCrudAdapter.java`, `ProductCrudImpl.java`
+
+## F8 — `feature/refresh-tokens` (RF-ID-6, SEC-3, SEC-4, SEC-20; ADR-0008)
+
+- [x] T8.1 Redis no Compose e no backend
+  - Acceptance: serviço `redis` com senha obrigatória e sem porta no host; backend conecta por `SPRING_DATA_REDIS_*`
+  - Verify: `docker compose up --build`
+  - Files: `docker-compose.yml`, `.env.example`, `pom.xml`, `application.properties`
+- [x] T8.2 Refresh token no core e no Redis
+  - Acceptance: token aleatório, só hash no Redis, TTL 7 dias, rotação, reuso fora de 30 s revoga tudo, logout revoga o atual
+  - Verify: testes unitários do caso de uso; integração com Redis do Testcontainers
+  - Files: `RefreshTokenGateway.java`, `RedisRefreshTokenAdapter.java`, `UserAuthImpl.java`, `AuthTokens.java`
+- [x] T8.3 Rotas e cookies
+  - Acceptance: `signin` emite os dois cookies; `POST /api/auth/refresh`; `signout` revoga e limpa os dois; acesso de 15 minutos
+  - Verify: `SecurityRulesTest`; integração de ponta a ponta
+  - Files: `AuthController.java`, `SecurityConfig.java`, `JwtTokenAdapter.java`
+- [x] T8.4 Renovação automática no frontend
+  - Acceptance: `401` → um único refresh compartilhado → repete a requisição; rotas de autenticação não renovam
+  - Verify: testes do `apiClient`
+  - Files: `frontend/src/api/apiClient.js`

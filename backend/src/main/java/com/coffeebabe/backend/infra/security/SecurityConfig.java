@@ -33,6 +33,7 @@ import java.util.Set;
 @Configuration
 public class SecurityConfig {
     public static final String TOKEN_COOKIE = "access_token";
+    public static final String REFRESH_COOKIE = "refresh_token";
     private static final Set<String> SAFE_METHODS = Set.of("GET", "HEAD", "OPTIONS");
 
     private final SecretKey secretKey;
@@ -66,7 +67,7 @@ public class SecurityConfig {
                         referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/auth/signin", "/api/auth/signup", "/api/auth/signout").permitAll()
+                        .requestMatchers("/api/auth/signin", "/api/auth/signup", "/api/auth/signout", "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product/**").permitAll()
                         .requestMatchers("/api/product/**", "/api/user/**").hasRole("ADMIN")
                         .requestMatchers("/api/orders/all").hasRole("ADMIN")
@@ -92,8 +93,9 @@ public class SecurityConfig {
 
     private static BearerTokenResolver cookieTokenResolver() {
         return request -> {
-            // a stale cookie must not block signing in or out
-            if (request.getRequestURI().startsWith("/api/auth/sign")) {
+            // an expired access cookie must not block signing in or out, or refreshing the session
+            var uri = request.getRequestURI();
+            if (uri.startsWith("/api/auth/sign") || uri.equals("/api/auth/refresh")) {
                 return null;
             }
             var cookie = WebUtils.getCookie(request, TOKEN_COOKIE);

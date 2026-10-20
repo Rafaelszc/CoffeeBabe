@@ -100,6 +100,18 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(InvalidSessionException.class)
+    public ResponseEntity<ApiResponseEntity<?>> invalidSessionException(InvalidSessionException exception) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Session expired, sign in again!",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(TooManyAttemptsException.class)
     public ResponseEntity<ApiResponseEntity<?>> tooManyAttemptsException(TooManyAttemptsException exception) {
         var response = new ApiResponseEntity<>(

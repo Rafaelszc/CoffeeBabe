@@ -1,5 +1,6 @@
 package com.coffeebabe.backend.adapter.web.controller;
 
+import com.coffeebabe.backend.core.entities.AuthTokens;
 import com.coffeebabe.backend.core.entities.PageResult;
 import com.coffeebabe.backend.core.entities.User;
 import com.coffeebabe.backend.core.entities.UserRole;
@@ -8,6 +9,7 @@ import com.coffeebabe.backend.core.usecases.OrderUseCase;
 import com.coffeebabe.backend.core.usecases.ProductCrudUseCase;
 import com.coffeebabe.backend.core.usecases.UserAuthUseCase;
 import com.coffeebabe.backend.core.usecases.UserCrudUseCase;
+import com.coffeebabe.backend.core.exceptions.InvalidSessionException;
 import com.coffeebabe.backend.core.exceptions.UserNotAuthorizedException;
 import com.coffeebabe.backend.infra.security.AttemptLimiter;
 import com.coffeebabe.backend.infra.security.SecurityConfig;
@@ -34,6 +36,7 @@ import java.util.UUID;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -118,19 +121,41 @@ class SecurityRulesTest {
     }
 
     @Test
-    void signInSetsHttpOnlyCookieAndNoTokenInBody() throws Exception {
-        when(userAuthUseCase.signIn("ana@mail.com", "senha-forte")).thenReturn("the-token");
+    void signInSetsHttpOnlyCookiesAndNoTokenInBody() throws Exception {
+        when(userAuthUseCase.signIn("ana@mail.com", "senha-forte")).thenReturn(new AuthTokens("the-token", "the-refresh"));
 
         mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"ana@mail.com\",\"password\":\"senha-forte\"}"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Set-Cookie", allOf(
-                        startsWith(SecurityConfig.TOKEN_COOKIE + "=the-token"),
-                        containsString("HttpOnly"),
-                        containsString("SameSite=Lax"),
-                        containsString("Path=/"),
-                        not(containsString("Secure")))))
-                .andExpect(content().string(not(containsString("the-token"))));
+                .andExpect(header().stringValues("Set-Cookie", hasItems(
+                        allOf(startsWith(SecurityConfig.TOKEN_COOKIE + "=the-token"), containsString("HttpOnly"),
+                                containsString("SameSite=Lax"), containsString("Path=/;"),
+                                containsString("Max-Age=900"), not(containsString("Secure"))),
+                        allOf(startsWith(SecurityConfig.REFRESH_COOKIE + "=the-refresh"), containsString("HttpOnly"),
+                                containsString("SameSite=Strict"), containsString("Path=/api/auth"),
+                                containsString("Max-Age=604800")))))
+                .andExpect(content().string(not(containsString("the-token"))))
+                .andExpect(content().string(not(containsString("the-refresh"))));
+    }
+
+    @Test
+    void refreshRotatesTheSessionEvenWithAnExpiredAccessCookie() throws Exception {
+        when(userAuthUseCase.refresh("old-refresh")).thenReturn(new AuthTokens("new-token", "new-refresh"));
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie(SecurityConfig.TOKEN_COOKIE, "expired-garbage"),
+                                new Cookie(SecurityConfig.REFRESH_COOKIE, "old-refresh")))
+                .andExpect(status().isOk())
+                .andExpect(header().stringValues("Set-Cookie", hasItems(
+                        startsWith(SecurityConfig.TOKEN_COOKIE + "=new-token"),
+                        startsWith(SecurityConfig.REFRESH_COOKIE + "=new-refresh"))));
+    }
+
+    @Test
+    void refreshWithoutAValidTokenIs401() throws Exception {
+        when(userAuthUseCase.refresh(null)).thenThrow(new InvalidSessionException("x"));
+
+        mockMvc.perform(post("/api/auth/refresh")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -150,7 +175,7 @@ class SecurityRulesTest {
     @Test
     void successfulSignInResetsTheEmailCount() throws Exception {
         when(userAuthUseCase.signIn("bia@mail.com", "wrong-pass")).thenThrow(new UserNotAuthorizedException("x"));
-        when(userAuthUseCase.signIn("bia@mail.com", "senha-forte")).thenReturn("t");
+        when(userAuthUseCase.signIn("bia@mail.com", "senha-forte")).thenReturn(new AuthTokens("t", "r"));
         var wrong = "{\"email\":\"bia@mail.com\",\"password\":\"wrong-pass\"}";
         var right = "{\"email\":\"bia@mail.com\",\"password\":\"senha-forte\"}";
 
@@ -172,10 +197,14 @@ class SecurityRulesTest {
     }
 
     @Test
-    void signOutClearsCookie() throws Exception {
-        mockMvc.perform(post("/api/auth/signout"))
+    void signOutRevokesTheRefreshTokenAndClearsBothCookies() throws Exception {
+        mockMvc.perform(post("/api/auth/signout").cookie(new Cookie(SecurityConfig.REFRESH_COOKIE, "the-refresh")))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Set-Cookie", containsString("Max-Age=0")));
+                .andExpect(header().stringValues("Set-Cookie", hasItems(
+                        allOf(startsWith(SecurityConfig.TOKEN_COOKIE + "="), containsString("Max-Age=0")),
+                        allOf(startsWith(SecurityConfig.REFRESH_COOKIE + "="), containsString("Max-Age=0")))));
+
+        verify(userAuthUseCase).signOut("the-refresh");
     }
 
     @Test

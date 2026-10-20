@@ -18,9 +18,9 @@ public class JwtTokenAdapter implements TokenGateway {
     private final JwtEncoder jwtEncoder;
     private final Duration expiration;
 
-    public JwtTokenAdapter(JwtEncoder jwtEncoder, @Value("${security.jwt.token.expirationHours}") long expirationHours) {
+    public JwtTokenAdapter(JwtEncoder jwtEncoder, @Value("${security.jwt.token.expirationMinutes}") long expirationMinutes) {
         this.jwtEncoder = jwtEncoder;
-        this.expiration = Duration.ofHours(expirationHours);
+        this.expiration = Duration.ofMinutes(expirationMinutes);
     }
 
     @Override
