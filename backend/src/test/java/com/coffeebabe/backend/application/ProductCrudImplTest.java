@@ -60,6 +60,13 @@ class ProductCrudImplTest {
     }
 
     @Test
+    void bestSellersAreTheTopSix() {
+        products.getBestSellers();
+
+        verify(gateway).getBestSellers(6);
+    }
+
+    @Test
     void priceIsStoredWithTwoDecimalsHalfUp() {
         var product = new Product("Latte", "d", new BigDecimal("4.005"), ProductCategory.HOT_COFFEE);
         assertThat(product.getPrice()).isEqualTo(new BigDecimal("4.01"));

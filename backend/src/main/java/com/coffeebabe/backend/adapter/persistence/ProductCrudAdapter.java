@@ -72,8 +72,8 @@ public class ProductCrudAdapter implements ProductCrudGateway {
     }
 
     @Override
-    public List<Product> getBestSellers() {
-        return productRepository.findAllBestSellers();
+    public List<Product> getBestSellers(int limit) {
+        return productRepository.findBestSellers(limit);
     }
 
     @Override

@@ -24,6 +24,7 @@ import java.util.UUID;
 @Service
 public class ProductCrudImpl implements ProductCrudUseCase {
     public static final int MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+    public static final int BEST_SELLERS_LIMIT = 6;
 
     private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
     private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
@@ -44,7 +45,7 @@ public class ProductCrudImpl implements ProductCrudUseCase {
 
     @Override
     public List<Product> getBestSellers() {
-        return productCrudGateway.getBestSellers();
+        return productCrudGateway.getBestSellers(BEST_SELLERS_LIMIT);
     }
 
     @Override
