@@ -1,6 +1,7 @@
 export const productsData = [{
     id: 1,
     name: "Cappuccino",
+    category: "HOT_COFFEE",
     image: {
       url: "src/assets/product-cappuccino.jpg",
       alt: "A creamy espresso-based drink with steamed milk.",
@@ -10,6 +11,7 @@ export const productsData = [{
   {
     id: 2,
     name: "Mocha",
+    category: "HOT_COFFEE",
     image: {
       url: "src/assets/product-mocha.jpg",
       alt: "A rich, chocolate-flavored coffee drink.",
@@ -19,6 +21,7 @@ export const productsData = [{
   {
     id: 3,
     name: "Cake",
+    category: "SNACK",
     image: {
       url: "src/assets/product-cake.jpg",
       alt: "A delicious, moist cake perfect for any occasion.",
@@ -28,6 +31,7 @@ export const productsData = [{
   {
     id: 4,
     name: "Croissant",
+    category: "SNACK",
     image: {
       url: "src/assets/product-croissant.jpg",
       alt: "A flaky, buttery pastry perfect for breakfast.",
@@ -37,6 +41,7 @@ export const productsData = [{
   {
     id: 5,
     name: "Brownie",
+    category: "SNACK",
     image: {
       url: "src/assets/product-brownie.jpg",
       alt: "A rich, chocolatey treat perfect for dessert.",
@@ -46,6 +51,7 @@ export const productsData = [{
   {
     id: 6,
     name: "Iced Latte",
+    category: "COLD_COFFEE",
     image: {
       url: "src/assets/product-iced-latte.jpg",
       alt: "A refreshing cold coffee drink with espresso and milk.",
@@ -55,6 +61,7 @@ export const productsData = [{
   {
     id: 7,
     name: "Espresso",
+    category: "HOT_COFFEE",
     image: {
       url: "src/assets/product-espresso.jpg",
       alt: "A strong, bold coffee drink perfect for those who love a powerful kick.",
