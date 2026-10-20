@@ -43,27 +43,27 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
 
 ## F3 — `feature/catalog-search` (RF-CAT-1..8)
 
-- [ ] T3.1 Migration de produto: categoria, preço `NUMERIC(10,2)`, nome maior
+- [x] T3.1 Migration de produto: categoria, preço `NUMERIC(10,2)`, nome maior
   - Acceptance: enum `HOT_COFFEE | COLD_COFFEE | SNACK` obrigatório; seed categorizado; `Product.price` vira `BigDecimal`, `@Positive`
   - Verify: teste de repositório com Testcontainers; JSON de preço com 2 casas
   - Files: `V6__*.sql`, `Product.java`, DTOs de produto, `ProductCrudAdapter.java`
-- [ ] T3.2 Busca e paginação
+- [x] T3.2 Busca e paginação
   - Acceptance: `GET /api/product?q=&category=&page=&size=` com `size` ≤ 50 e total de páginas; busca sem diferenciar maiúsculas
   - Verify: testes de repositório e de controller com combinações de filtros
   - Files: `ProductRepository.java`, `ProductCrudUseCase.java`, `ProductCrudImpl.java`, `ProductController.java`
-- [ ] T3.3 CRUD de admin
+- [x] T3.3 CRUD de admin
   - Acceptance: criar, editar e remover só por `ADMIN`; nome único; erros de validação com campos
   - Verify: `MockMvc` com `USER` → 403 e `ADMIN` → 2xx
   - Files: `ProductController.java`, `ProductCrudImpl.java`, DTOs
-- [ ] T3.4 Tabela e endpoints de imagem
+- [x] T3.4 Tabela e endpoints de imagem
   - Acceptance: `product_image` (BYTEA); upload multipart por `ADMIN` (≤ 2 MB, JPEG/PNG/WebP por assinatura); `GET /api/product/{id}/image` com `Content-Type`, `ETag`, `nosniff`; imagem some junto com o produto
   - Verify: testes: ida e volta dos mesmos bytes; PNG falso rejeitado; > 2 MB rejeitado
   - Files: `V7__*.sql`, `ProductImage.java`, gateway, adapter, `ProductImageController.java`
-- [ ] T3.5 Carga das imagens do seed na primeira subida
+- [x] T3.5 Carga das imagens do seed na primeira subida
   - Acceptance: com banco vazio, os três produtos têm imagem; segunda subida não duplica nem sobrescreve imagem enviada pelo admin
   - Verify: teste de integração rodando o runner duas vezes
-  - Files: `resources/seed/images/*`, `infra/seed/SeedImageLoader.java`, `V2` (remover `image_url` do seed)
-- [ ] T3.6 Mais vendidos
+  - Files: `resources/seed/images/*`, `infra/seed/ProductImageSeeder.java`, `V7` (remove `image_url`; a `V2` não é editada)
+- [x] T3.6 Mais vendidos
   - Acceptance: `/get/best` continua funcionando com o novo modelo
   - Verify: teste de controller
   - Files: `ProductController.java`, `ProductRepository.java`

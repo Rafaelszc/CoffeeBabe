@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
@@ -46,6 +47,33 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException exception,
+                                                                          HttpHeaders headers,
+                                                                          HttpStatusCode status,
+                                                                          WebRequest request) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Image too large! Maximum is 2 MB.",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONTENT_TOO_LARGE);
+    }
+
+    @ExceptionHandler(ProductAlreadyExistsException.class)
+    public ResponseEntity<ApiResponseEntity<?>> productAlreadyExistsException(ProductAlreadyExistsException exception) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Product already exists!",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)

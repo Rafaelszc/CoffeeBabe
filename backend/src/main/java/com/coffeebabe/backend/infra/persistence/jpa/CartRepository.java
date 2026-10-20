@@ -15,7 +15,7 @@ import java.util.UUID;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, UUID> {
     @Query(value = """
-            SELECT p.id, p.name, p.image_url, p.description, p.price
+            SELECT p.*
             FROM cart c
             INNER JOIN product p
             ON c.product_id = p.id

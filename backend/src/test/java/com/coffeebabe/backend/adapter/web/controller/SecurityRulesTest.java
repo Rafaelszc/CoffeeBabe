@@ -1,5 +1,6 @@
 package com.coffeebabe.backend.adapter.web.controller;
 
+import com.coffeebabe.backend.core.entities.PageResult;
 import com.coffeebabe.backend.core.entities.User;
 import com.coffeebabe.backend.core.entities.UserRole;
 import com.coffeebabe.backend.core.usecases.ManageCartUseCase;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -23,9 +25,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -34,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class SecurityRulesTest {
     private static final String PRODUCT_JSON = """
-            {"name":"Latte","imageUrl":"x","description":"d","price":5.0}""";
+            {"name":"Latte","description":"d","price":5.00,"category":"HOT_COFFEE"}""";
 
     @Autowired MockMvc mockMvc;
     @Autowired JwtEncoder jwtEncoder;
@@ -58,22 +63,39 @@ class SecurityRulesTest {
 
     @Test
     void productReadIsPublic() throws Exception {
-        // ProductController still answers 302 FOUND (known issue, fixed in F3); here it only matters that security lets it through
-        mockMvc.perform(get("/api/product/get/all")).andExpect(status().isFound());
+        when(productCrudUseCase.searchProducts(any(), any(), anyInt(), anyInt()))
+                .thenReturn(new PageResult<>(List.of(), 0, 12, 0, 0));
+
+        mockMvc.perform(get("/api/product")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/product/get/best")).andExpect(status().isOk());
     }
 
     @Test
     void userCannotWriteProducts() throws Exception {
-        mockMvc.perform(post("/api/product/create").cookie(tokenCookie(UUID.randomUUID(), UserRole.USER))
+        mockMvc.perform(post("/api/product").cookie(tokenCookie(UUID.randomUUID(), UserRole.USER))
                         .contentType(MediaType.APPLICATION_JSON).content(PRODUCT_JSON))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void adminCanWriteProducts() throws Exception {
-        mockMvc.perform(post("/api/product/create").cookie(tokenCookie(UUID.randomUUID(), UserRole.ADMIN))
+        mockMvc.perform(post("/api/product").cookie(tokenCookie(UUID.randomUUID(), UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON).content(PRODUCT_JSON))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void userCannotEditDeleteOrUploadProducts() throws Exception {
+        var id = UUID.randomUUID();
+        var user = tokenCookie(UUID.randomUUID(), UserRole.USER);
+
+        mockMvc.perform(put("/api/product/" + id).cookie(user)
+                        .contentType(MediaType.APPLICATION_JSON).content(PRODUCT_JSON))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/product/" + id).cookie(user)).andExpect(status().isForbidden());
+        mockMvc.perform(multipart("/api/product/" + id + "/image")
+                        .file(new MockMultipartFile("file", new byte[]{1})).cookie(user))
+                .andExpect(status().isForbidden());
     }
 
     @Test
