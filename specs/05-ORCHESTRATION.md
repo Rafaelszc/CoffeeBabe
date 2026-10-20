@@ -1,6 +1,6 @@
 # 05 — Orquestração
 
-Status: implementada na branch `feature/docker-orchestration`; ainda não validada com Docker em execução. Decisão: [ADR-0007](adr/0007-orquestracao-docker-compose.md).
+Status: implementada e validada com Docker em execução. Decisão: [ADR-0007](adr/0007-orquestracao-docker-compose.md).
 
 ## Uso
 
@@ -30,6 +30,8 @@ O backend só inicia depois que o `db` está saudável. O Flyway aplica as migra
 `POSTGRES_PASSWORD` e `JWT_SECRET` não têm valor padrão: o Compose se recusa a subir sem eles. `.env` está no `.gitignore` da raiz.
 
 ## Limites conhecidos
+
+- Os bind mounts do frontend (`src/`, `public/`) usam o label `:z`. Sem ele, hosts com SELinux em `Enforcing` (Fedora) negam a leitura dentro do contêiner e o Vite falha com `EACCES`. O `:z` reetiqueta só esses dois diretórios e é ignorado em hosts sem SELinux.
 
 - `application.properties` ainda contém o segredo JWT e a senha antigos como padrão para execução fora do Docker. A limpeza é parte de `feature/identity-auth` (SEC-14).
 - O frontend lê `import.meta.env.BASE_URL` e hardcoda `http://localhost:8080`; `VITE_API_URL` já é passada pelo Compose para quando o cliente HTTP único existir (`feature/frontend-api-integration`).

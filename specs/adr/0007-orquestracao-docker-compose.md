@@ -14,6 +14,7 @@ Um `docker-compose.yml` na raiz sobe os três serviços. Detalhes em [05-ORCHEST
 - Backend configurado só por variáveis de ambiente (binding relaxado do Spring: `SPRING_DATASOURCE_*`, `SECURITY_JWT_TOKEN`), sem alterar `application.properties`.
 - Frontend roda o servidor de desenvolvimento do Vite, para manter hot reload e a origem `http://localhost:5174` que o CORS já permite.
 - Portas publicadas apenas em `127.0.0.1`.
+- Bind mounts do frontend com label SELinux `:z`, para funcionar em hosts com SELinux em `Enforcing`.
 
 ## Consequências
 
