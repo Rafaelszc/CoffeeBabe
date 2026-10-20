@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-CoffeeBabe is a coffee-shop app: a Spring Boot REST API (`backend/`) and a React SPA (`frontend/`). The README is a placeholder. `Jogo2/` appears in git status as staged-then-deleted files unrelated to this project; ignore it.
+CoffeeBabe is a coffee-shop app: a Spring Boot REST API (`backend/`) and a React SPA (`frontend/`). `Jogo2/` appears in git status as staged-then-deleted files unrelated to this project; ignore it.
 
 ## Docker Compose
 
