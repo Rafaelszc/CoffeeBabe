@@ -65,7 +65,8 @@ Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SEC
 - SEC-16: cabeçalhos de segurança básicos (`X-Content-Type-Options`, `Referrer-Policy`). CSP e HSTS ficam como melhoria opcional, já que não há deploy.
 - SEC-17: HTTPS não é exigido (só localhost). Se o projeto for hospedado um dia, torna-se obrigatório e `Secure` e HSTS passam a valer.
 - SEC-18: logs sem senha, token nem endereço.
-- SEC-19: dependências verificadas (`./mvnw dependency-check` ou Dependabot) e `bun audit` no frontend antes de cada release.
+- SEC-19: dependências verificadas antes de cada release: `bun audit` no frontend e, no backend, as dependências de runtime consultadas no osv.dev (lista de `./mvnw dependency:list -DincludeScope=runtime`).
+  - Estado em 2026-10-20: backend sem alertas (Spring Boot 4.0.8 com Tomcat 11.0.27, Jackson 2.21.8 e 3.1.8 sobrescritos no `pom.xml` até um release do Boot trazê-los). Frontend com 1 alerta aceito: `braces` 3.0.3 (GHSA-vfj7-8cjw-p6xm, DoS por padrão aninhado), só na CLI do `shadcn` usada em desenvolvimento e sem versão corrigida publicada; não chega ao bundle do navegador.
 
 ## 4. Critérios de aceite de segurança por módulo
 
