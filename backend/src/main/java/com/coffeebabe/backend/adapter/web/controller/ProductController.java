@@ -64,4 +64,16 @@ public class ProductController {
 
         return new ResponseEntity<>(response, HttpStatus.FOUND);
     }
+
+    @GetMapping("/get/best")
+    public ResponseEntity<ApiResponseEntity<?>> getBestSellers() {
+        var response = new ApiResponseEntity<>(
+                true,
+                "Best sellers find successfully",
+                productCrudUseCase.getBestSellers(),
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.FOUND);
+    }
 }

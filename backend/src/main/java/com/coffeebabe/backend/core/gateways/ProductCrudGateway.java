@@ -10,4 +10,5 @@ public interface ProductCrudGateway {
     Product getProductById(UUID productId);
     List<Product> getAllProducts();
     void deleteProductById(UUID productId);
+    List<Product> getBestSellers();
 }

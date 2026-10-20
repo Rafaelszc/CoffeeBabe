@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public interface ProductCrudUseCase {
     List<Product> getAllProducts();
+    List<Product> getBestSellers();
     Product getProductById(UUID id);
     void publishProduct(Product product);
     void removeProduct(UUID productId);

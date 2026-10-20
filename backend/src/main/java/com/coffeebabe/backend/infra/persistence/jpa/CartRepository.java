@@ -17,7 +17,7 @@ public interface CartRepository extends JpaRepository<Cart, UUID> {
     @Query(value = """
             SELECT p.id, p.name, p.image_url, p.description, p.price
             FROM cart c
-            INNER JOIN products p
+            INNER JOIN product p
             ON c.product_id = p.id
             WHERE c.user_id = :userId
             """, nativeQuery = true)

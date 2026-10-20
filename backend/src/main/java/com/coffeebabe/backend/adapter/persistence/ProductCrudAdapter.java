@@ -37,4 +37,9 @@ public class ProductCrudAdapter implements ProductCrudGateway {
     public void deleteProductById(UUID productId) {
         productRepository.deleteById(productId);
     }
+
+    @Override
+    public List<Product> getBestSellers() {
+        return productRepository.findAllBestSellers();
+    }
 }
