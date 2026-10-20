@@ -70,19 +70,19 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
 
 ## F4 — `feature/cart-per-user` (RF-CART-1..4, SEC-7, SEC-8)
 
-- [ ] T4.1 Migration do carrinho com `quantity` e `UNIQUE (user_id, product_id)`
+- [x] T4.1 Migration do carrinho com `quantity` e `UNIQUE (user_id, product_id)`
   - Acceptance: migração de linhas antigas agrupa por usuário e produto; `@NotNull` nos UUIDs
   - Verify: teste de migration com dados prévios
   - Files: `V8__*.sql`, `Cart.java`, `CartCrudGateway.java`, `CartCrudAdapter.java`, `CartRepository.java`
-- [ ] T4.2 Carrinho do usuário autenticado
+- [x] T4.2 Carrinho do usuário autenticado
   - Acceptance: `userId` sai de parâmetros e corpo; add/decrease/delete/get operam no usuário do token; produto inexistente → 404
   - Verify: teste com dois usuários: A não vê nem altera o carrinho de B
   - Files: `CartController.java`, `ManageCartUseCase.java`, `ManageCartImpl.java`, DTOs
-- [ ] T4.3 Totais do carrinho
+- [x] T4.3 Totais do carrinho
   - Acceptance: resposta com itens agrupados, `subtotal`, `tax` (3%), `total`; `HALF_UP` com 2 casas
   - Verify: teste unitário do cálculo
   - Files: `ManageCartImpl.java`, `CartResponseDTO.java`, classe de cálculo de preço (reutilizada em F5)
-- [ ] T4.4 CORS com `PATCH`/`PUT` e origem configurável
+- [x] T4.4 CORS com `PATCH`/`PUT` e origem configurável
   - Acceptance: `decrease` funciona do navegador; origem vem de configuração
   - Verify: teste de preflight
   - Files: `WebConfig.java`, `docker-compose.yml`

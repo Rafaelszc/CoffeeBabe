@@ -3,6 +3,7 @@ package com.coffeebabe.backend;
 import com.coffeebabe.backend.infra.security.SecurityConfig;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,9 +11,15 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -109,6 +116,72 @@ class BackendApplicationTests {
 
 		mockMvc.perform(delete("/api/product/" + id).cookie(admin)).andExpect(status().isOk());
 		mockMvc.perform(get("/api/product/" + id + "/image")).andExpect(status().isNotFound());
+	}
+
+	@Test
+	void cartsAreIsolatedPerUser() throws Exception {
+		var alice = signUpAndSignIn("alice");
+		var bob = signUpAndSignIn("bob");
+		var productId = productIdByName("Mocha");
+
+		for (int i = 0; i < 2; i++) {
+			mockMvc.perform(post("/api/cart/add").cookie(alice).contentType(MediaType.APPLICATION_JSON)
+							.content("{\"productId\":\"" + productId + "\"}"))
+					.andExpect(status().isOk());
+		}
+
+		mockMvc.perform(get("/api/cart/get").cookie(alice))
+				.andExpect(jsonPath("$.data.products[0].quantity").value(2))
+				.andExpect(jsonPath("$.data.subtotal").value(9.0))
+				.andExpect(jsonPath("$.data.tax").value(0.27))
+				.andExpect(jsonPath("$.data.total").value(9.27));
+
+		// a userId param changes nothing: the user always comes from the token
+		var otherUserId = UUID.randomUUID().toString();
+		mockMvc.perform(delete("/api/cart/delete").cookie(bob).param("productId", productId).param("userId", otherUserId))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/cart/get").cookie(bob).param("userId", otherUserId))
+				.andExpect(jsonPath("$.data.products.length()").value(0));
+		mockMvc.perform(get("/api/cart/get").cookie(alice))
+				.andExpect(jsonPath("$.data.products[0].quantity").value(2));
+
+		mockMvc.perform(post("/api/cart/add").cookie(alice).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"productId\":\"" + UUID.randomUUID() + "\"}"))
+				.andExpect(status().isNotFound());
+		mockMvc.perform(get("/api/cart/get")).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void v8GroupsExistingCartRows() {
+		var dataSource = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+		Flyway.configure().dataSource(dataSource).schemas("v8check").target("7").load().migrate();
+
+		var jdbc = new JdbcTemplate(dataSource);
+		jdbc.execute("SET search_path TO v8check");
+		var user = jdbc.queryForObject("INSERT INTO users (username, email, password, role) VALUES ('u', 'u@x.com', 'h', 'USER') RETURNING id", UUID.class);
+		var product = jdbc.queryForObject("SELECT id FROM product WHERE name = 'Cake'", UUID.class);
+		for (int i = 0; i < 3; i++) {
+			jdbc.update("INSERT INTO cart (user_id, product_id) VALUES (?, ?)", user, product);
+		}
+
+		Flyway.configure().dataSource(dataSource).schemas("v8check").load().migrate();
+
+		var rows = jdbc.queryForList("SELECT quantity FROM v8check.cart", Integer.class);
+		assertThat(rows).containsExactly(3);
+	}
+
+	private Cookie signUpAndSignIn(String name) throws Exception {
+		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"username\":\"" + name + "\",\"email\":\"" + name + "@mail.com\",\"password\":\"senha-forte\"}"))
+				.andExpect(status().isCreated());
+		return mockMvc.perform(post("/api/auth/signin").contentType(MediaType.APPLICATION_JSON)
+						.content("{\"email\":\"" + name + "@mail.com\",\"password\":\"senha-forte\"}"))
+				.andReturn().getResponse().getCookie(SecurityConfig.TOKEN_COOKIE);
+	}
+
+	private String productIdByName(String name) throws Exception {
+		var body = mockMvc.perform(get("/api/product").param("q", name)).andReturn().getResponse().getContentAsString();
+		return JsonPath.read(body, "$.data.items[0].id");
 	}
 
 	private Cookie adminCookie() throws Exception {
