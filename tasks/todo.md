@@ -137,3 +137,14 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
   - Acceptance: Vitest + Testing Library; testes de formulário de login e do carrinho
   - Verify: `bun run test`
   - Files: `package.json`, `vite.config.js`, testes
+
+## F7 — `feature/best-sellers-from-orders` (RF-CAT-6)
+
+- [x] T7.1 Migration `V10`: `order_item.product_id` e remoção de `best_seller`
+  - Acceptance: coluna com `ON DELETE SET NULL`, preenchida pelo nome nos pedidos antigos; `best_seller` removida
+  - Verify: teste de integração da migration sobre dados prévios
+  - Files: `V10__*.sql`, `OrderItem.java`
+- [x] T7.2 Ranking calculado pelos pedidos concluídos
+  - Acceptance: soma de unidades de pedidos `COMPLETED`, top 6, empate pelo nome, completado com o catálogo
+  - Verify: teste de integração com pedidos `COMPLETED`, `PENDING` e `CANCELLED`
+  - Files: `ProductRepository.java`, `ProductCrudGateway.java`, `ProductCrudAdapter.java`, `ProductCrudImpl.java`

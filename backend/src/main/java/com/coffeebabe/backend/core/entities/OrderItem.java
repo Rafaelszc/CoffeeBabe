@@ -19,6 +19,9 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    // null once the product is deleted; the name snapshot stays
+    private UUID productId;
+
     @NotBlank
     private String productName;
 
@@ -30,6 +33,7 @@ public class OrderItem {
     private int quantity;
 
     public OrderItem(CartItem item) {
+        this.productId = item.product().getId();
         this.productName = item.product().getName();
         this.unitPrice = item.product().getPrice();
         this.quantity = item.quantity();

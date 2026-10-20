@@ -15,7 +15,7 @@ public interface ProductCrudGateway {
     Optional<Product> findProductByName(String name);
     PageResult<Product> searchProducts(String query, ProductCategory category, int page, int size);
     void deleteProductById(UUID productId);
-    List<Product> getBestSellers();
+    List<Product> getBestSellers(int limit);
     void saveImage(ProductImage image);
     Optional<ProductImage> findImage(UUID productId);
 }

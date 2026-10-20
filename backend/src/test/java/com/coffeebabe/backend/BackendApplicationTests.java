@@ -265,6 +265,63 @@ class BackendApplicationTests {
 				.contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"" + status + "\"}"));
 	}
 
+	@Test
+	void bestSellersCountOnlyCompletedOrders() throws Exception {
+		var admin = adminCookie();
+		var gina = signUpAndSignIn("gina");
+		var hugo = signUpAndSignIn("hugo");
+
+		// 10 Cakes completed: Cake must lead whatever other tests completed
+		addToCart(gina, productIdByName("Cake"), 10);
+		var completed = placePickupOrder(gina);
+		for (var next : new String[]{"CONFIRMED", "READY", "COMPLETED"}) {
+			setStatus(admin, completed, next).andExpect(status().isOk());
+		}
+
+		// big pending and cancelled orders do not count
+		addToCart(hugo, productIdByName("Mocha"), 30);
+		placePickupOrder(hugo);
+		addToCart(hugo, productIdByName("Cappuccino"), 40);
+		setStatus(admin, placePickupOrder(hugo), "CANCELLED").andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/product/get/best"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.data[0].name").value("Cake"))
+				.andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.allOf(
+						org.hamcrest.Matchers.greaterThanOrEqualTo(3), org.hamcrest.Matchers.lessThanOrEqualTo(6))));
+	}
+
+	@Test
+	void v10LinksOldOrderItemsAndDropsBestSeller() {
+		var dataSource = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
+		Flyway.configure().dataSource(dataSource).schemas("v10check").target("9").load().migrate();
+
+		var jdbc = new JdbcTemplate(dataSource);
+		jdbc.execute("SET search_path TO v10check");
+		var user = jdbc.queryForObject("INSERT INTO users (username, email, password, role) VALUES ('u', 'u@x.com', 'h', 'USER') RETURNING id", UUID.class);
+		var order = jdbc.queryForObject("""
+				INSERT INTO orders (user_id, fulfillment, status, subtotal, tax, delivery_fee, total)
+				VALUES (?, 'PICKUP', 'COMPLETED', 3.75, 0.11, 0, 3.86) RETURNING id""", UUID.class, user);
+		jdbc.update("INSERT INTO order_item (order_id, product_name, unit_price, quantity) VALUES (?, 'Cake', 3.75, 1)", order);
+		jdbc.update("INSERT INTO order_item (order_id, product_name, unit_price, quantity) VALUES (?, 'Gone', 1, 1)", order);
+
+		Flyway.configure().dataSource(dataSource).schemas("v10check").load().migrate();
+
+		assertThat(jdbc.queryForObject("""
+				SELECT COUNT(*) FROM v10check.order_item oi JOIN v10check.product p ON p.id = oi.product_id
+				WHERE oi.product_name = 'Cake'""", Integer.class)).isEqualTo(1);
+		assertThat(jdbc.queryForObject("SELECT product_id FROM v10check.order_item WHERE product_name = 'Gone'", UUID.class)).isNull();
+		assertThat(jdbc.queryForObject("SELECT to_regclass('v10check.best_seller')", String.class)).isNull();
+	}
+
+	private String placePickupOrder(Cookie user) throws Exception {
+		var body = mockMvc.perform(post("/api/orders").cookie(user).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"fulfillment\":\"PICKUP\"}"))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		return JsonPath.read(body, "$.data.id");
+	}
+
 	private Cookie signUpAndSignIn(String name) throws Exception {
 		mockMvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
 						.content("{\"username\":\"" + name + "\",\"email\":\"" + name + "@mail.com\",\"password\":\"senha-forte\"}"))
