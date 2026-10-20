@@ -9,7 +9,7 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
   - Acceptance: três serviços em execução; seed visível; dados persistem após `down`/`up`; sem `.env` falha pedindo `POSTGRES_PASSWORD`
   - Verify: critérios de `specs/05-ORCHESTRATION.md`, executados por quem tem acesso ao Docker
   - Files: `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile` (ajustes se algo falhar)
-- [ ] T1.2 Atualizar `CLAUDE.md` com os comandos Docker
+- [x] T1.2 Atualizar `CLAUDE.md` com os comandos Docker
   - Acceptance: comandos de `docker compose` e do `.env` documentados
   - Verify: leitura
   - Files: `CLAUDE.md`

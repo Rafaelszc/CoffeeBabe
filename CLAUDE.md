@@ -4,6 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CoffeeBabe is a coffee-shop app: a Spring Boot REST API (`backend/`) and a React SPA (`frontend/`). The README is a placeholder. `Jogo2/` appears in git status as staged-then-deleted files unrelated to this project; ignore it.
 
+## Docker Compose
+
+The root `docker-compose.yml` runs db, backend and frontend without installing Java, Bun or Postgres. See `specs/05-ORCHESTRATION.md`.
+
+```
+cp .env.example .env        # set POSTGRES_PASSWORD and JWT_SECRET (required)
+docker compose up --build   # db on 127.0.0.1:5433, backend on :8080, frontend on :5174
+docker compose down         # stop, keep data
+docker compose down -v      # stop and delete the db volume
+```
+
+Run `down -v` when switching to a branch with different migrations, since Flyway fails on checksum mismatches. The frontend bind mounts use `:z` so they work under SELinux (Fedora).
+
 ## Backend (`backend/`)
 
 Spring Boot (Java 25, Maven wrapper), Postgres + Flyway, Lombok, Bean Validation. JWT config lives in `application.properties`.
