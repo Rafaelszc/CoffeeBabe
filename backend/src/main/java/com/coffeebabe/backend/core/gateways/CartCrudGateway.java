@@ -1,13 +1,15 @@
 package com.coffeebabe.backend.core.gateways;
 
-import com.coffeebabe.backend.core.entities.Product;
+import com.coffeebabe.backend.core.entities.Cart;
+import com.coffeebabe.backend.core.entities.CartItem;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CartCrudGateway {
-    void saveItemToCart(UUID productId, UUID userId);
-    List<Product> getItemsFromCart(UUID userId);
-    void removeItemFromCart(UUID productId, UUID userId);
-    void removeFirstFromCart(UUID productId, UUID userId);
+    Optional<Cart> findItem(UUID userId, UUID productId);
+    void saveItem(Cart item);
+    void deleteItem(Cart item);
+    List<CartItem> getItems(UUID userId);
 }

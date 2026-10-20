@@ -2,14 +2,18 @@ package com.coffeebabe.backend.adapter.web.controller;
 
 import com.coffeebabe.backend.adapter.dtos.ApiResponseEntity;
 import com.coffeebabe.backend.adapter.dtos.CartRequestDTO;
+import com.coffeebabe.backend.adapter.dtos.CartResponseDTO;
 import com.coffeebabe.backend.core.usecases.ManageCartUseCase;
-import org.springframework.http.HttpStatus;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+// The cart always belongs to the token's user; userId is never read from the request (SEC-7)
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
@@ -20,8 +24,8 @@ public class CartController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<ApiResponseEntity<?>> deleteFromCart(@RequestParam UUID productId, @RequestParam UUID userId) {
-        manageCartUseCase.removeFromCart(productId, userId);
+    public ResponseEntity<ApiResponseEntity<?>> deleteFromCart(@AuthenticationPrincipal Jwt jwt, @RequestParam UUID productId) {
+        manageCartUseCase.removeFromCart(userId(jwt), productId);
 
         var response = new ApiResponseEntity<>(
                 true,
@@ -30,11 +34,12 @@ public class CartController {
                 List.of()
         );
 
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        return ResponseEntity.ok(response);
     }
+
     @PatchMapping("/decrease")
-    public ResponseEntity<ApiResponseEntity<?>> decreaseFromCart(@RequestParam UUID productId, @RequestParam UUID userId) {
-        manageCartUseCase.decreaseItemQuantity(productId, userId);
+    public ResponseEntity<ApiResponseEntity<?>> decreaseFromCart(@AuthenticationPrincipal Jwt jwt, @RequestParam UUID productId) {
+        manageCartUseCase.decreaseItemQuantity(userId(jwt), productId);
 
         var response = new ApiResponseEntity<>(
                 true,
@@ -43,12 +48,13 @@ public class CartController {
                 List.of()
         );
 
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ApiResponseEntity<?>> addToCart(@RequestBody CartRequestDTO requestDTO) {
-        manageCartUseCase.addToCard(requestDTO.productId(), requestDTO.userId());
+    public ResponseEntity<ApiResponseEntity<?>> addToCart(@AuthenticationPrincipal Jwt jwt,
+                                                          @Valid @RequestBody CartRequestDTO requestDTO) {
+        manageCartUseCase.addToCart(userId(jwt), requestDTO.productId());
 
         var response = new ApiResponseEntity<>(
                 true,
@@ -57,18 +63,22 @@ public class CartController {
                 List.of()
         );
 
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/get")
-    public ResponseEntity<ApiResponseEntity<?>> getAllItems(@RequestParam UUID userId) {
+    public ResponseEntity<ApiResponseEntity<?>> getAllItems(@AuthenticationPrincipal Jwt jwt) {
         var response = new ApiResponseEntity<>(
                 true,
                 "All items returned successfully",
-                manageCartUseCase.getCartProducts(userId),
+                new CartResponseDTO(manageCartUseCase.getCart(userId(jwt))),
                 List.of()
         );
 
-        return new ResponseEntity<>(response, HttpStatus.FOUND);
+        return ResponseEntity.ok(response);
+    }
+
+    private static UUID userId(Jwt jwt) {
+        return UUID.fromString(jwt.getSubject());
     }
 }
