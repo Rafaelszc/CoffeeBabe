@@ -22,6 +22,8 @@ Ordenados por gravidade. Cada um vira tarefa na feature indicada.
 
 O segredo JWT atual deve ser considerado comprometido, porque já está no histórico do Git. Ele precisa ser rotacionado antes de qualquer deploy, e o valor antigo nunca pode ser usado fora de desenvolvimento local.
 
+Rotação: gere um novo valor com `openssl rand -base64 32`, coloque em `JWT_SECRET` no `.env` e reinicie o backend. Todas as sessões existentes deixam de valer e os usuários precisam entrar de novo.
+
 ## 2. Modelo de ameaça (resumo)
 
 | Ativo | Ameaça | Controle |

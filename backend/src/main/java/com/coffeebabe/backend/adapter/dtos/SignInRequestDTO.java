@@ -1,10 +1,6 @@
 package com.coffeebabe.backend.adapter.dtos;
 
-import com.coffeebabe.backend.core.entities.UserRole;
+import jakarta.validation.constraints.NotBlank;
 
-public record SignInRequestDTO(String email, String password) {
-    public SignInRequestDTO(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
+public record SignInRequestDTO(@NotBlank String email, @NotBlank String password) {
 }

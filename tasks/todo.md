@@ -16,27 +16,27 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
 
 ## F2 — `feature/identity-auth` (RF-ID-1..5, SEC-1..9, SEC-14)
 
-- [ ] T2.1 Dependências de teste e de segurança
+- [x] T2.1 Dependências de teste e de segurança
   - Acceptance: `spring-boot-starter-security` e Testcontainers (Postgres) no `pom.xml`; um teste de integração sobe o contexto contra Postgres em contêiner
   - Verify: `./mvnw test`
   - Files: `backend/pom.xml`, `BackendApplicationTests.java`, config de teste
-- [ ] T2.2 Migration de `users` e validação de entrada
+- [x] T2.2 Migration de `users` e validação de entrada
   - Acceptance: e-mail único case-insensitive; tamanhos coerentes com a entidade; hash cabe na coluna; DTOs com `@Valid` e erros `400` com campos (SEC-10, SEC-12)
   - Verify: testes de repositório e de `MockMvc` com corpo inválido
   - Files: `V5__*.sql`, `User.java`, `SignUpRequestDTO.java`, `RestExceptionAdvice.java`
-- [ ] T2.3 Cadastro e login (use cases)
+- [x] T2.3 Cadastro e login (use cases)
   - Acceptance: senha com BCrypt; cadastro cria `USER`; e-mail repetido retorna erro; login com e-mail inexistente e senha errada responde igual (SEC-6)
   - Verify: testes unitários de `UserAuthImpl` com gateways simulados
   - Files: `UserAuthImpl.java`, `UserCrudGateway.java`, `UserCrudAdapter.java`, `TokenGateway.java`
-- [ ] T2.4 JWT em cookie `HttpOnly`, filtro e regras de rota
+- [x] T2.4 JWT em cookie `HttpOnly`, filtro e regras de rota
   - Acceptance: `SecurityFilterChain` nega por padrão; `/api/auth/**` e leitura de produtos públicos; `signin` define cookie `HttpOnly; SameSite=Lax`; `signout` limpa; `GET /api/auth/me`; 401/403 corretos
   - Verify: `MockMvc`: sem cookie → 401; `USER` em rota admin → 403; cookie sem `Secure` em localhost
   - Files: `infra/security/*`, `AuthController.java`, `WebConfig.java`
-- [ ] T2.5 Remover rota pública de criação de usuário e `userId` exposto
+- [x] T2.5 Remover rota pública de criação de usuário e `userId` exposto
   - Acceptance: `POST /api/user/create` removido; `GET /api/user/get` só para o próprio usuário ou `ADMIN`; admin inicial criado por variável de ambiente ou seed
   - Verify: testes de autorização
   - Files: `UserController.java`, `application.properties`, `docker-compose.yml`, `.env.example`
-- [ ] T2.6 Segredos fora do repositório
+- [x] T2.6 Segredos fora do repositório
   - Acceptance: `application.properties` sem segredo real; JWT/senha por variável de ambiente; instruções para rotacionar
   - Verify: `grep` no repositório; subida via Compose continua funcionando
   - Files: `application.properties`, `.env.example`, `specs/03-SECURITY.md`

@@ -27,10 +27,11 @@ public class User {
 
     @NotNull
     @Email(message = "Invalid email")
+    @Size(max = 254)
     private String email;
 
-    @NotNull
-    @Size(min = 6, max = 30, message = "Password must be at least 6 characters and most 30 characters")
+    // BCrypt hash; plain-text password rules live in SignUpRequestDTO (ADR-0003)
+    @NotBlank
     private String password;
 
     @Enumerated(EnumType.STRING)
