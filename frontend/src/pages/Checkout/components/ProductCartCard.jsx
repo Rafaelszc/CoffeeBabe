@@ -1,5 +1,6 @@
 import { removeFromCart } from "@/api/productService"
 import { Button } from "@/components/ui/button"
+import { formatPrice, resolveImage } from "@/lib/format"
 import { Trash2 } from "lucide-react"
 
 export const ProductCartCard = ({ id, name, image, price }) => {
@@ -7,22 +8,16 @@ export const ProductCartCard = ({ id, name, image, price }) => {
         removeFromCart({id, name, image, price})
     }
     return (
-        <article className="flex flex-row justify-between bg-white/80 w-full rounded-4xl px-5 py-5 shadow-sm">
-            <div className="overflow-hidden flex gap-5">
-                <img className="h-25 w-25 rounded-2xl" src={image.url}  alt={name} />
-                <div>
-                    <h2 className="text-xl">{name}</h2>
-                    <p className="text-sm font-light text-secondary">{image.alt}</p>
-                </div>
+        <article className="flex items-center gap-4 rounded-2xl border bg-card p-3 pr-4 sm:gap-5">
+            <img className="size-20 shrink-0 rounded-xl object-cover sm:size-24" src={resolveImage(image?.url)} alt={name} />
+            <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-medium">{name}</h2>
+                <p className="line-clamp-1 text-sm text-muted-foreground">{image?.alt}</p>
+                <p className="mt-1.5 font-medium tabular-nums">{formatPrice(price)}</p>
             </div>
-            <div className="flex flex-col justify-between items-end">
-                <Button onClick={handleRemoveFromCart} variant="destructive" className="cursor-pointer" >
-                    <Trash2 className="text-secondary" />
-                </Button>
-                <div>
-                    <h3 className="text-lg font-light text-secondary tracking-wide">$ {price.toFixed(2)}</h3>
-                </div>
-            </div>
+            <Button onClick={handleRemoveFromCart} variant="ghost" size="icon" aria-label={`Remover ${name} do carrinho`} className="text-muted-foreground hover:text-destructive">
+                <Trash2 />
+            </Button>
         </article>
     )
 }

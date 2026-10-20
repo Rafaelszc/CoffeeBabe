@@ -22,8 +22,8 @@ function App() {
             <Route path='/products' element={<Products />} />
             <Route path='/checkout' element={<Checkout />} />
             <Route path='/profile' element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="/*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
