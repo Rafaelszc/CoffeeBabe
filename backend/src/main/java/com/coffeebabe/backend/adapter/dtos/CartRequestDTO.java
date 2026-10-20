@@ -1,10 +1,8 @@
 package com.coffeebabe.backend.adapter.dtos;
 
+import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
-public record CartRequestDTO(UUID productId, UUID userId) {
-    public CartRequestDTO(UUID productId, UUID userId) {
-        this.productId = productId;
-        this.userId = userId;
-    }
+public record CartRequestDTO(@NotNull UUID productId) {
 }

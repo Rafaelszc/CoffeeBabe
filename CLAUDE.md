@@ -19,16 +19,16 @@ Run `down -v` when switching to a branch with different migrations, since Flyway
 
 ## Backend (`backend/`)
 
-Spring Boot (Java 25, Maven wrapper), Postgres + Flyway, Lombok, Bean Validation. JWT config lives in `application.properties`.
+Spring Boot (Java 25, Maven wrapper), Postgres + Flyway, Lombok, Bean Validation, Spring Security (OAuth2 resource server with an HS256 JWT read from the `access_token` HttpOnly cookie). `application.properties` holds only dev defaults; secrets come from env vars (`JWT_SECRET` of 32+ bytes, `DB_*`, `ADMIN_EMAIL`/`ADMIN_PASSWORD` for the seeded admin).
 
 ```
 cd backend
-./mvnw spring-boot:run          # needs Postgres at localhost:5432/coffeebabe (postgres/123)
+./mvnw spring-boot:run          # needs Postgres at localhost:5432/coffeebabe (postgres/postgres by default)
 ./mvnw test                     # all tests
 ./mvnw test -Dtest=ClassName#method   # single test
 ```
 
-Only `BackendApplicationTests` exists, and it needs a live database.
+Unit tests and `@WebMvcTest` slices (`SecurityRulesTest`) run without a database. `BackendApplicationTests` uses Testcontainers, so it needs Docker.
 
 ### Architecture (clean/hexagonal, package `com.coffeebabe.backend`)
 
@@ -41,7 +41,7 @@ Dependencies point inward: `adapter`/`infra` -> `application` -> `core`.
 - `application`: use-case implementations (`*Impl`) that depend only on gateways.
 - `adapter/web/controller`: REST controllers. `adapter/dtos`: request/response DTOs, including `ApiResponseEntity`.
 - `adapter/persistence`: gateway implementations (`*CrudAdapter`) that delegate to Spring Data repositories.
-- `infra/persistence/jpa`: Spring Data JPA repositories. `infra/exception/RestExceptionAdvice`: global exception handler that maps the core exceptions to HTTP responses. `infra/web/WebConfig`: CORS, which allows only `http://localhost:5174` and the GET/POST/DELETE/OPTIONS methods. Adding PUT/PATCH endpoints requires updating it.
+- `infra/persistence/jpa`: Spring Data JPA repositories. `infra/exception/RestExceptionAdvice`: global exception handler that maps the core exceptions to HTTP responses. `infra/security/SecurityConfig`: route rules (deny by default), JWT encoder/decoder and the cross-origin write check. `infra/seed/AdminSeeder`: first ADMIN from env. `infra/seed/ProductImageSeeder`: attaches `resources/seed/images/*` to seed products without an image. `infra/web/WebConfig`: CORS, which allows only `app.cors.allowed-origin` (default `http://localhost:5174`) and the GET/POST/PUT/PATCH/DELETE/OPTIONS methods.
 
 To add a feature: define the use case and gateway in `core`, implement them in `application` and `adapter/persistence`, then expose a controller.
 

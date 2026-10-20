@@ -16,92 +16,92 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
 
 ## F2 — `feature/identity-auth` (RF-ID-1..5, SEC-1..9, SEC-14)
 
-- [ ] T2.1 Dependências de teste e de segurança
+- [x] T2.1 Dependências de teste e de segurança
   - Acceptance: `spring-boot-starter-security` e Testcontainers (Postgres) no `pom.xml`; um teste de integração sobe o contexto contra Postgres em contêiner
   - Verify: `./mvnw test`
   - Files: `backend/pom.xml`, `BackendApplicationTests.java`, config de teste
-- [ ] T2.2 Migration de `users` e validação de entrada
+- [x] T2.2 Migration de `users` e validação de entrada
   - Acceptance: e-mail único case-insensitive; tamanhos coerentes com a entidade; hash cabe na coluna; DTOs com `@Valid` e erros `400` com campos (SEC-10, SEC-12)
   - Verify: testes de repositório e de `MockMvc` com corpo inválido
   - Files: `V5__*.sql`, `User.java`, `SignUpRequestDTO.java`, `RestExceptionAdvice.java`
-- [ ] T2.3 Cadastro e login (use cases)
+- [x] T2.3 Cadastro e login (use cases)
   - Acceptance: senha com BCrypt; cadastro cria `USER`; e-mail repetido retorna erro; login com e-mail inexistente e senha errada responde igual (SEC-6)
   - Verify: testes unitários de `UserAuthImpl` com gateways simulados
   - Files: `UserAuthImpl.java`, `UserCrudGateway.java`, `UserCrudAdapter.java`, `TokenGateway.java`
-- [ ] T2.4 JWT em cookie `HttpOnly`, filtro e regras de rota
+- [x] T2.4 JWT em cookie `HttpOnly`, filtro e regras de rota
   - Acceptance: `SecurityFilterChain` nega por padrão; `/api/auth/**` e leitura de produtos públicos; `signin` define cookie `HttpOnly; SameSite=Lax`; `signout` limpa; `GET /api/auth/me`; 401/403 corretos
   - Verify: `MockMvc`: sem cookie → 401; `USER` em rota admin → 403; cookie sem `Secure` em localhost
   - Files: `infra/security/*`, `AuthController.java`, `WebConfig.java`
-- [ ] T2.5 Remover rota pública de criação de usuário e `userId` exposto
+- [x] T2.5 Remover rota pública de criação de usuário e `userId` exposto
   - Acceptance: `POST /api/user/create` removido; `GET /api/user/get` só para o próprio usuário ou `ADMIN`; admin inicial criado por variável de ambiente ou seed
   - Verify: testes de autorização
   - Files: `UserController.java`, `application.properties`, `docker-compose.yml`, `.env.example`
-- [ ] T2.6 Segredos fora do repositório
+- [x] T2.6 Segredos fora do repositório
   - Acceptance: `application.properties` sem segredo real; JWT/senha por variável de ambiente; instruções para rotacionar
   - Verify: `grep` no repositório; subida via Compose continua funcionando
   - Files: `application.properties`, `.env.example`, `specs/03-SECURITY.md`
 
 ## F3 — `feature/catalog-search` (RF-CAT-1..8)
 
-- [ ] T3.1 Migration de produto: categoria, preço `NUMERIC(10,2)`, nome maior
+- [x] T3.1 Migration de produto: categoria, preço `NUMERIC(10,2)`, nome maior
   - Acceptance: enum `HOT_COFFEE | COLD_COFFEE | SNACK` obrigatório; seed categorizado; `Product.price` vira `BigDecimal`, `@Positive`
   - Verify: teste de repositório com Testcontainers; JSON de preço com 2 casas
   - Files: `V6__*.sql`, `Product.java`, DTOs de produto, `ProductCrudAdapter.java`
-- [ ] T3.2 Busca e paginação
+- [x] T3.2 Busca e paginação
   - Acceptance: `GET /api/product?q=&category=&page=&size=` com `size` ≤ 50 e total de páginas; busca sem diferenciar maiúsculas
   - Verify: testes de repositório e de controller com combinações de filtros
   - Files: `ProductRepository.java`, `ProductCrudUseCase.java`, `ProductCrudImpl.java`, `ProductController.java`
-- [ ] T3.3 CRUD de admin
+- [x] T3.3 CRUD de admin
   - Acceptance: criar, editar e remover só por `ADMIN`; nome único; erros de validação com campos
   - Verify: `MockMvc` com `USER` → 403 e `ADMIN` → 2xx
   - Files: `ProductController.java`, `ProductCrudImpl.java`, DTOs
-- [ ] T3.4 Tabela e endpoints de imagem
+- [x] T3.4 Tabela e endpoints de imagem
   - Acceptance: `product_image` (BYTEA); upload multipart por `ADMIN` (≤ 2 MB, JPEG/PNG/WebP por assinatura); `GET /api/product/{id}/image` com `Content-Type`, `ETag`, `nosniff`; imagem some junto com o produto
   - Verify: testes: ida e volta dos mesmos bytes; PNG falso rejeitado; > 2 MB rejeitado
   - Files: `V7__*.sql`, `ProductImage.java`, gateway, adapter, `ProductImageController.java`
-- [ ] T3.5 Carga das imagens do seed na primeira subida
+- [x] T3.5 Carga das imagens do seed na primeira subida
   - Acceptance: com banco vazio, os três produtos têm imagem; segunda subida não duplica nem sobrescreve imagem enviada pelo admin
   - Verify: teste de integração rodando o runner duas vezes
-  - Files: `resources/seed/images/*`, `infra/seed/SeedImageLoader.java`, `V2` (remover `image_url` do seed)
-- [ ] T3.6 Mais vendidos
+  - Files: `resources/seed/images/*`, `infra/seed/ProductImageSeeder.java`, `V7` (remove `image_url`; a `V2` não é editada)
+- [x] T3.6 Mais vendidos
   - Acceptance: `/get/best` continua funcionando com o novo modelo
   - Verify: teste de controller
   - Files: `ProductController.java`, `ProductRepository.java`
 
 ## F4 — `feature/cart-per-user` (RF-CART-1..4, SEC-7, SEC-8)
 
-- [ ] T4.1 Migration do carrinho com `quantity` e `UNIQUE (user_id, product_id)`
+- [x] T4.1 Migration do carrinho com `quantity` e `UNIQUE (user_id, product_id)`
   - Acceptance: migração de linhas antigas agrupa por usuário e produto; `@NotNull` nos UUIDs
   - Verify: teste de migration com dados prévios
   - Files: `V8__*.sql`, `Cart.java`, `CartCrudGateway.java`, `CartCrudAdapter.java`, `CartRepository.java`
-- [ ] T4.2 Carrinho do usuário autenticado
+- [x] T4.2 Carrinho do usuário autenticado
   - Acceptance: `userId` sai de parâmetros e corpo; add/decrease/delete/get operam no usuário do token; produto inexistente → 404
   - Verify: teste com dois usuários: A não vê nem altera o carrinho de B
   - Files: `CartController.java`, `ManageCartUseCase.java`, `ManageCartImpl.java`, DTOs
-- [ ] T4.3 Totais do carrinho
+- [x] T4.3 Totais do carrinho
   - Acceptance: resposta com itens agrupados, `subtotal`, `tax` (3%), `total`; `HALF_UP` com 2 casas
   - Verify: teste unitário do cálculo
   - Files: `ManageCartImpl.java`, `CartResponseDTO.java`, classe de cálculo de preço (reutilizada em F5)
-- [ ] T4.4 CORS com `PATCH`/`PUT` e origem configurável
+- [x] T4.4 CORS com `PATCH`/`PUT` e origem configurável
   - Acceptance: `decrease` funciona do navegador; origem vem de configuração
   - Verify: teste de preflight
   - Files: `WebConfig.java`, `docker-compose.yml`
 
 ## F5 — `feature/orders-checkout` (RF-ORD-1..7)
 
-- [ ] T5.1 Migration e entidades de pedido
+- [x] T5.1 Migration e entidades de pedido
   - Acceptance: `orders`, `order_item` (nome e preço unitário gravados), endereço, tipo, totais, status
   - Verify: teste de repositório
   - Files: `V9__*.sql`, `Order.java`, `OrderItem.java`, `OrderStatus.java`, repositório
-- [ ] T5.2 Criar pedido a partir do carrinho
+- [x] T5.2 Criar pedido a partir do carrinho
   - Acceptance: preço recalculado no servidor; `DELIVERY` exige endereço e soma R$ 20,00; carrinho vazio → 400; carrinho limpo na mesma transação
   - Verify: exemplo do PRD (total R$ 32,88); teste de rollback
   - Files: `OrderUseCase.java`, `OrderImpl.java`, `OrderCrudGateway.java`, adapter, `OrderController.java`
-- [ ] T5.3 Consulta e transições de status
+- [x] T5.3 Consulta e transições de status
   - Acceptance: cliente lista e vê só os próprios (404 nos de outros); transições inválidas → 409; `ADMIN` muda status
   - Verify: testes da máquina de estados e de autorização
   - Files: `OrderImpl.java`, `OrderController.java`, `OrderStatus.java`
-- [ ] T5.4 Cancelamento pelo cliente
+- [x] T5.4 Cancelamento pelo cliente
   - Acceptance: cancela em `PENDING` e `CONFIRMED`; em `READY` ou depois → 409
   - Verify: teste por status
   - Files: `OrderImpl.java`, `OrderController.java`
