@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 CoffeeBabe is a coffee-shop app: a Spring Boot REST API (`backend/`) and a React SPA (`frontend/`).
+
 ## Docker Compose
 
 The root `docker-compose.yml` runs db, backend and frontend without installing Java, Bun or Postgres. See `specs/05-ORCHESTRATION.md`.
