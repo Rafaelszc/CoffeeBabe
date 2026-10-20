@@ -22,6 +22,11 @@ public class ProductCrudImpl implements ProductCrudUseCase {
     }
 
     @Override
+    public List<Product> getBestSellers() {
+        return productCrudGateway.getBestSellers();
+    }
+
+    @Override
     public Product getProductById(UUID id) {
         return productCrudGateway.getProductById(id);
     }

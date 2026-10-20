@@ -3,5 +3,5 @@ CREATE TABLE IF NOT EXISTS cart(
     user_id UUID NOT NULL,
     product_id UUID NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES product(id) ON DELETE CASCADE
 );
