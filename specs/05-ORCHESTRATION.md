@@ -1,6 +1,6 @@
 # 05 — Orquestração
 
-Status: implementada na branch `feature/docker-orchestration`; ainda não validada com Docker em execução. Decisão: [ADR-0007](adr/0007-orquestracao-docker-compose.md).
+Status: implementada e validada com Docker em execução. Decisão: [ADR-0007](adr/0007-orquestracao-docker-compose.md).
 
 ## Uso
 
