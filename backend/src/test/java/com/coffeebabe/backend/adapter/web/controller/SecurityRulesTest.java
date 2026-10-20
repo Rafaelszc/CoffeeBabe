@@ -4,6 +4,7 @@ import com.coffeebabe.backend.core.entities.PageResult;
 import com.coffeebabe.backend.core.entities.User;
 import com.coffeebabe.backend.core.entities.UserRole;
 import com.coffeebabe.backend.core.usecases.ManageCartUseCase;
+import com.coffeebabe.backend.core.usecases.OrderUseCase;
 import com.coffeebabe.backend.core.usecases.ProductCrudUseCase;
 import com.coffeebabe.backend.core.usecases.UserAuthUseCase;
 import com.coffeebabe.backend.core.usecases.UserCrudUseCase;
@@ -48,6 +49,7 @@ class SecurityRulesTest {
     @MockitoBean UserCrudUseCase userCrudUseCase;
     @MockitoBean ProductCrudUseCase productCrudUseCase;
     @MockitoBean ManageCartUseCase manageCartUseCase;
+    @MockitoBean OrderUseCase orderUseCase;
 
     @Test
     void protectedRouteWithoutCookieReturns401() throws Exception {

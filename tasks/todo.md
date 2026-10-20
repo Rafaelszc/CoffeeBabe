@@ -89,19 +89,19 @@ Referências: RF-* no [PRD](../specs/01-PRD.md), SEC-* em [03-SECURITY](../specs
 
 ## F5 — `feature/orders-checkout` (RF-ORD-1..7)
 
-- [ ] T5.1 Migration e entidades de pedido
+- [x] T5.1 Migration e entidades de pedido
   - Acceptance: `orders`, `order_item` (nome e preço unitário gravados), endereço, tipo, totais, status
   - Verify: teste de repositório
   - Files: `V9__*.sql`, `Order.java`, `OrderItem.java`, `OrderStatus.java`, repositório
-- [ ] T5.2 Criar pedido a partir do carrinho
+- [x] T5.2 Criar pedido a partir do carrinho
   - Acceptance: preço recalculado no servidor; `DELIVERY` exige endereço e soma R$ 20,00; carrinho vazio → 400; carrinho limpo na mesma transação
   - Verify: exemplo do PRD (total R$ 32,88); teste de rollback
   - Files: `OrderUseCase.java`, `OrderImpl.java`, `OrderCrudGateway.java`, adapter, `OrderController.java`
-- [ ] T5.3 Consulta e transições de status
+- [x] T5.3 Consulta e transições de status
   - Acceptance: cliente lista e vê só os próprios (404 nos de outros); transições inválidas → 409; `ADMIN` muda status
   - Verify: testes da máquina de estados e de autorização
   - Files: `OrderImpl.java`, `OrderController.java`, `OrderStatus.java`
-- [ ] T5.4 Cancelamento pelo cliente
+- [x] T5.4 Cancelamento pelo cliente
   - Acceptance: cancela em `PENDING` e `CONFIRMED`; em `READY` ou depois → 409
   - Verify: teste por status
   - Files: `OrderImpl.java`, `OrderController.java`

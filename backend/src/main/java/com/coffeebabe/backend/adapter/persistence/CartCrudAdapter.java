@@ -41,6 +41,11 @@ public class CartCrudAdapter implements CartCrudGateway {
     }
 
     @Override
+    public void clearCart(UUID userId) {
+        cartRepository.deleteByUserId(userId);
+    }
+
+    @Override
     public List<CartItem> getItems(UUID userId) {
         var rows = cartRepository.findByUserId(userId);
         var products = productRepository.findAllById(rows.stream().map(Cart::getProductId).toList()).stream()

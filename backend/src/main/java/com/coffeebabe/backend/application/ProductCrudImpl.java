@@ -23,7 +23,6 @@ import java.util.UUID;
 
 @Service
 public class ProductCrudImpl implements ProductCrudUseCase {
-    public static final int MAX_PAGE_SIZE = 50;
     public static final int MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
     private static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
@@ -39,9 +38,7 @@ public class ProductCrudImpl implements ProductCrudUseCase {
 
     @Override
     public PageResult<Product> searchProducts(String query, ProductCategory category, int page, int size) {
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
-            throw new InvalidDataException("InvalidDataException");
-        }
+        PageResult.checkPaging(page, size);
         return productCrudGateway.searchProducts(query == null ? "" : query.trim(), category, page, size);
     }
 

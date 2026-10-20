@@ -12,4 +12,5 @@ public interface CartCrudGateway {
     void saveItem(Cart item);
     void deleteItem(Cart item);
     List<CartItem> getItems(UUID userId);
+    void clearCart(UUID userId);
 }

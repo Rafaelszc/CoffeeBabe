@@ -76,6 +76,30 @@ public class RestExceptionAdvice extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<ApiResponseEntity<?>> orderNotFoundException(OrderNotFoundException exception) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Order not found!",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(OrderStatusConflictException.class)
+    public ResponseEntity<ApiResponseEntity<?>> orderStatusConflictException(OrderStatusConflictException exception) {
+        var response = new ApiResponseEntity<>(
+                false,
+                "Invalid order status change!",
+                null,
+                List.of()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ApiResponseEntity<?>> userAlreadyExistsException(UserAlreadyExistsException exception) {
         var response = new ApiResponseEntity<>(

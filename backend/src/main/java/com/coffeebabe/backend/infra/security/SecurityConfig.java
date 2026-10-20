@@ -65,6 +65,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/signin", "/api/auth/signup", "/api/auth/signout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product/**").permitAll()
                         .requestMatchers("/api/product/**", "/api/user/**").hasRole("ADMIN")
+                        .requestMatchers("/api/orders/all").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/status").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .bearerTokenResolver(cookieTokenResolver())

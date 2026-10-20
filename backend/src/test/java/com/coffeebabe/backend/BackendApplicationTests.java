@@ -1,5 +1,6 @@
 package com.coffeebabe.backend;
 
+import com.coffeebabe.backend.core.gateways.CartCrudGateway;
 import com.coffeebabe.backend.infra.security.SecurityConfig;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;
@@ -14,12 +15,17 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -36,6 +42,7 @@ class BackendApplicationTests {
 	}
 
 	@Autowired MockMvc mockMvc;
+	@MockitoSpyBean CartCrudGateway cartCrudGateway;
 
 	@Test
 	void signUpSignInAndMe() throws Exception {
@@ -168,6 +175,94 @@ class BackendApplicationTests {
 
 		var rows = jdbc.queryForList("SELECT quantity FROM v8check.cart", Integer.class);
 		assertThat(rows).containsExactly(3);
+	}
+
+	@Test
+	void orderEndToEndWithServerPrices() throws Exception {
+		var carol = signUpAndSignIn("carol");
+		var dave = signUpAndSignIn("dave");
+		var admin = adminCookie();
+		addToCart(carol, productIdByName("Cappuccino"), 2);
+		addToCart(carol, productIdByName("Mocha"), 1);
+
+		// the client-sent total is ignored; the PRD example totals R$ 32,88
+		var body = mockMvc.perform(post("/api/orders").cookie(carol).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"fulfillment\":\"DELIVERY\",\"address\":\"Rua das Flores, 10\",\"total\":0.01}"))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.data.subtotal").value(12.5))
+				.andExpect(jsonPath("$.data.tax").value(0.38))
+				.andExpect(jsonPath("$.data.deliveryFee").value(20.0))
+				.andExpect(jsonPath("$.data.total").value(32.88))
+				.andReturn().getResponse().getContentAsString();
+		var orderId = JsonPath.<String>read(body, "$.data.id");
+
+		mockMvc.perform(get("/api/cart/get").cookie(carol)).andExpect(jsonPath("$.data.products.length()").value(0));
+		mockMvc.perform(post("/api/orders").cookie(carol).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"fulfillment\":\"PICKUP\"}"))
+				.andExpect(status().isBadRequest());
+
+		mockMvc.perform(get("/api/orders/" + orderId).cookie(dave)).andExpect(status().isNotFound());
+		mockMvc.perform(post("/api/orders/" + orderId + "/cancel").cookie(dave)).andExpect(status().isNotFound());
+		mockMvc.perform(get("/api/orders").cookie(carol)).andExpect(jsonPath("$.data.items[0].id").value(orderId));
+
+		// a catalog change does not alter the past order
+		mockMvc.perform(put("/api/product/" + productIdByName("Mocha")).cookie(admin).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"name\":\"Mocha\",\"description\":\"novo\",\"price\":9.99,\"category\":\"HOT_COFFEE\"}"))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/orders/" + orderId).cookie(carol))
+				.andExpect(jsonPath("$.data.items[?(@.productName == 'Mocha')].unitPrice").value(4.5))
+				.andExpect(jsonPath("$.data.total").value(32.88));
+		// other tests rely on the seed price
+		mockMvc.perform(put("/api/product/" + productIdByName("Mocha")).cookie(admin).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"name\":\"Mocha\",\"description\":\"A rich, chocolate-flavored coffee drink.\",\"price\":4.5,\"category\":\"HOT_COFFEE\"}"))
+				.andExpect(status().isOk());
+
+		for (var next : new String[]{"CONFIRMED", "READY"}) {
+			setStatus(admin, orderId, next).andExpect(status().isOk());
+		}
+		mockMvc.perform(post("/api/orders/" + orderId + "/cancel").cookie(carol)).andExpect(status().isConflict());
+		setStatus(admin, orderId, "COMPLETED").andExpect(status().isConflict());
+		setStatus(admin, orderId, "OUT_FOR_DELIVERY").andExpect(status().isOk());
+		setStatus(admin, orderId, "COMPLETED").andExpect(jsonPath("$.data.status").value("COMPLETED"));
+	}
+
+	@Test
+	void ownerCancelsPendingPickupOrder() throws Exception {
+		var erin = signUpAndSignIn("erin");
+		addToCart(erin, productIdByName("Cake"), 1);
+		var body = mockMvc.perform(post("/api/orders").cookie(erin).contentType(MediaType.APPLICATION_JSON)
+						.content("{\"fulfillment\":\"PICKUP\"}"))
+				.andExpect(jsonPath("$.data.deliveryFee").value(0.0))
+				.andReturn().getResponse().getContentAsString();
+
+		mockMvc.perform(post("/api/orders/" + JsonPath.read(body, "$.data.id") + "/cancel").cookie(erin))
+				.andExpect(jsonPath("$.data.status").value("CANCELLED"));
+	}
+
+	@Test
+	void failingToClearTheCartRollsBackTheOrder() throws Exception {
+		var frank = signUpAndSignIn("frank");
+		addToCart(frank, productIdByName("Cake"), 1);
+		doThrow(new IllegalStateException("boom")).when(cartCrudGateway).clearCart(any());
+
+		assertThatThrownBy(() -> mockMvc.perform(post("/api/orders").cookie(frank).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"fulfillment\":\"PICKUP\"}"))).hasRootCauseInstanceOf(IllegalStateException.class);
+
+		mockMvc.perform(get("/api/orders").cookie(frank)).andExpect(jsonPath("$.data.totalItems").value(0));
+		mockMvc.perform(get("/api/cart/get").cookie(frank)).andExpect(jsonPath("$.data.products[0].quantity").value(1));
+	}
+
+	private void addToCart(Cookie user, String productId, int times) throws Exception {
+		for (int i = 0; i < times; i++) {
+			mockMvc.perform(post("/api/cart/add").cookie(user).contentType(MediaType.APPLICATION_JSON)
+							.content("{\"productId\":\"" + productId + "\"}"))
+					.andExpect(status().isOk());
+		}
+	}
+
+	private ResultActions setStatus(Cookie admin, String orderId, String status) throws Exception {
+		return mockMvc.perform(patch("/api/orders/" + orderId + "/status").cookie(admin)
+				.contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"" + status + "\"}"));
 	}
 
 	private Cookie signUpAndSignIn(String name) throws Exception {
