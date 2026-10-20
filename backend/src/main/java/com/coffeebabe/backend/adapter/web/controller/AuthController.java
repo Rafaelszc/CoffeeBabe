@@ -31,7 +31,8 @@ public class AuthController {
     private final UserAuthUseCase userAuthUseCase;
     private final UserCrudUseCase userCrudUseCase;
     private final AttemptLimiter attemptLimiter;
-    private final Duration expiration;
+    private final Duration accessTtl;
+    private final Duration refreshTtl;
     private final boolean secureCookie;
     private final int maxAttemptsPerIp;
     private final int maxFailuresPerEmail;
@@ -40,7 +41,8 @@ public class AuthController {
     public AuthController(UserAuthUseCase userAuthUseCase,
                           UserCrudUseCase userCrudUseCase,
                           AttemptLimiter attemptLimiter,
-                          @Value("${security.jwt.token.expirationHours}") long expirationHours,
+                          @Value("${security.jwt.token.expirationMinutes}") long accessTtlMinutes,
+                          @Value("${security.refresh-token.ttl-days}") long refreshTtlDays,
                           @Value("${security.jwt.cookie-secure}") boolean secureCookie,
                           @Value("${app.auth.max-attempts-per-ip}") int maxAttemptsPerIp,
                           @Value("${app.auth.max-failures-per-email}") int maxFailuresPerEmail,
@@ -48,7 +50,8 @@ public class AuthController {
         this.userAuthUseCase = userAuthUseCase;
         this.userCrudUseCase = userCrudUseCase;
         this.attemptLimiter = attemptLimiter;
-        this.expiration = Duration.ofHours(expirationHours);
+        this.accessTtl = Duration.ofMinutes(accessTtlMinutes);
+        this.refreshTtl = Duration.ofDays(refreshTtlDays);
         this.secureCookie = secureCookie;
         this.maxAttemptsPerIp = maxAttemptsPerIp;
         this.maxFailuresPerEmail = maxFailuresPerEmail;
@@ -64,7 +67,7 @@ public class AuthController {
             throw new TooManyAttemptsException("TooManyAttemptsException");
         }
 
-        var token = userAuthUseCase.signIn(requestDTO.email(), requestDTO.password());
+        var tokens = userAuthUseCase.signIn(requestDTO.email(), requestDTO.password());
         // only failures count against the email
         attemptLimiter.reset(emailKey);
 
@@ -74,9 +77,22 @@ public class AuthController {
                 null,
                 List.of());
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, tokenCookie(token, expiration).toString())
-                .body(response);
+        return withSessionCookies(tokens.accessToken(), tokens.refreshToken(), false).body(response);
+    }
+
+    // The refresh cookie only travels to /api/auth (Path), and SameSite=Strict keeps it off cross-site requests
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponseEntity<?>> refresh(
+            @CookieValue(name = SecurityConfig.REFRESH_COOKIE, required = false) String refreshToken) {
+        var tokens = userAuthUseCase.refresh(refreshToken);
+
+        var response = new ApiResponseEntity<>(
+                true,
+                "Session refreshed",
+                null,
+                List.of());
+
+        return withSessionCookies(tokens.accessToken(), tokens.refreshToken(), false).body(response);
     }
 
     @PostMapping("/signup")
@@ -99,7 +115,10 @@ public class AuthController {
     }
 
     @PostMapping("/signout")
-    public ResponseEntity<ApiResponseEntity<?>> signOut() {
+    public ResponseEntity<ApiResponseEntity<?>> signOut(
+            @CookieValue(name = SecurityConfig.REFRESH_COOKIE, required = false) String refreshToken) {
+        userAuthUseCase.signOut(refreshToken);
+
         var response = new ApiResponseEntity<>(
                 true,
                 "SignOut success",
@@ -107,9 +126,7 @@ public class AuthController {
                 List.of()
         );
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, tokenCookie("", Duration.ZERO).toString())
-                .body(response);
+        return withSessionCookies("", "", true).body(response);
     }
 
     @GetMapping("/me")
@@ -133,13 +150,22 @@ public class AuthController {
         }
     }
 
-    private ResponseCookie tokenCookie(String value, Duration maxAge) {
-        return ResponseCookie.from(SecurityConfig.TOKEN_COOKIE, value)
+    private ResponseEntity.BodyBuilder withSessionCookies(String accessToken, String refreshToken, boolean clear) {
+        var access = ResponseCookie.from(SecurityConfig.TOKEN_COOKIE, accessToken)
                 .httpOnly(true)
                 .secure(secureCookie)
                 .sameSite("Lax")
                 .path("/")
-                .maxAge(maxAge)
+                .maxAge(clear ? Duration.ZERO : accessTtl)
                 .build();
+        var refresh = ResponseCookie.from(SecurityConfig.REFRESH_COOKIE, refreshToken)
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Strict")
+                .path("/api/auth")
+                .maxAge(clear ? Duration.ZERO : refreshTtl)
+                .build();
+
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, access.toString(), refresh.toString());
     }
 }
