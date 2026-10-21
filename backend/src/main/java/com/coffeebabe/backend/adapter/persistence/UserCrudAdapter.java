@@ -6,6 +6,7 @@ import com.coffeebabe.backend.core.gateways.UserCrudGateway;
 import com.coffeebabe.backend.infra.persistence.jpa.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -20,6 +21,11 @@ public class UserCrudAdapter implements UserCrudGateway {
     public User getUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("UserNotFoundException"));
+    }
+
+    @Override
+    public Optional<User> findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override

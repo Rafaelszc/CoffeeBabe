@@ -1,78 +1,65 @@
-import { checkUser, getCookieData, logoutUser } from "@/api/userService"
 import { Button } from "@/components/ui/button"
-import { AuthContext } from "@/context/AuthContext"
-import { LogOut, Mail, User } from "lucide-react"
-import { useContext, useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { useAuth } from "@/context/auth"
+import { ClipboardList, LogOut, Mail, Package, Receipt, User } from "lucide-react"
+import { Link, useNavigate } from "react-router-dom"
+import { Container } from "@/components/site/Container"
 
+// Rota protegida por RequireAuth: aqui o usuário sempre existe.
 export const Profile = () => {
-    const [userData, setUserData] = useState({username: "Unknown", email: "Unkown@gmail.com"})
     const navigate = useNavigate()
-    const { setHasUser } = useContext(AuthContext)
+    const { user, isAdmin, signOut } = useAuth()
 
-    const handleLogout = () => {
-        logoutUser()
-        setHasUser(false)
-        
+    const handleLogout = async () => {
+        await signOut()
         navigate("/")
     }
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const check = await checkUser()
-            if (check.ok) {
-                const data = JSON.parse(getCookieData("userData"))
-                setUserData(data)
-            }
-            else {
-                navigate("/signin")
-                toast.warning("User not found!")
-            }
-        }
-        fetchUser()
-    }, [])
+    const initials = user.username.slice(0, 2).toUpperCase()
 
     return (
-        <div className="flex items-center justify-center w-full bg-secondary/10 py-20">
-            <div className="px-15 py-15 bg-primary-foreground shadow-md rounded-2xl flex flex-col items-center gap-10">
-                <div className="flex flex-col items-center gap-5">
-                    <div className="bg-secondary text-white  text-3xl flex items-center justify-center h-28 w-28 shadow-md rounded-full">
-                        <h2>{userData.username.slice(0, 2).toUpperCase()}</h2>
+        <Container className="flex justify-center py-12 md:py-20">
+            <div className="w-full max-w-md rounded-2xl border bg-card p-6 sm:p-10">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div aria-hidden="true" className="flex size-20 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
+                        {initials}
                     </div>
-                    <h2 className="text-4xl">
-                        {userData.username}
-                    </h2>
+                    <h1 className="text-3xl font-semibold">{user.username}</h1>
                 </div>
-                <div className="w-full flex flex-col gap-5 m-10">
-                    <div className="w-full flex gap-2 bg-secondary/20 px-5 py-2 rounded-2xl">
-                        <div className="flex items-center justify-center">
-                            <User className="text-secondary" />
-                        </div>
-                        <div className="flex-col flex">
-                            <span className="font-light tracking-wider text-secondary-foreground text-sm">Username</span>
-                            <span className="font-light">{userData.username}</span>
+                <dl className="mt-8 flex flex-col gap-3">
+                    <div className="flex items-center gap-3 rounded-xl bg-secondary px-4 py-3">
+                        <User className="size-5 text-primary" strokeWidth={1.75} />
+                        <div className="flex flex-col">
+                            <dt className="text-xs text-muted-foreground">Nome de usuário</dt>
+                            <dd>{user.username}</dd>
                         </div>
                     </div>
-                    <div className="w-full flex gap-2 bg-secondary/20 px-5 py-2 rounded-2xl">
-                        <div className="flex items-center justify-center">
-                            <Mail className="text-secondary" />
-                        </div>
-                        <div className="flex-col flex">
-                            <span className="font-light tracking-wider text-secondary-foreground text-sm">Email</span>
-                            <span className="font-light">{userData.email}</span>
+                    <div className="flex items-center gap-3 rounded-xl bg-secondary px-4 py-3">
+                        <Mail className="size-5 text-primary" strokeWidth={1.75} />
+                        <div className="flex min-w-0 flex-col">
+                            <dt className="text-xs text-muted-foreground">E-mail</dt>
+                            <dd className="truncate">{user.email}</dd>
                         </div>
                     </div>
-                    <div className="w-full bg-secondary">
-
-                    </div>
-                </div>
-                <div className="w-full flex items-center justify-center">
-                    <Button variant="destructive" onClick={() => handleLogout()} className="w-full p-5 cursor-pointer text-secondary">
-                        <LogOut className="text-secondary" /> Logout
+                </dl>
+                <div className="mt-8 flex flex-col gap-3">
+                    <Button asChild size="lg">
+                        <Link to="/orders"><Receipt /> Meus pedidos</Link>
+                    </Button>
+                    {isAdmin && (
+                        <>
+                            <Button asChild variant="outline" size="lg">
+                                <Link to="/admin/products"><Package /> Gerenciar produtos</Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg">
+                                <Link to="/admin/orders"><ClipboardList /> Gerenciar pedidos</Link>
+                            </Button>
+                        </>
+                    )}
+                    <Button variant="outline" size="lg" onClick={handleLogout}>
+                        <LogOut /> Sair
                     </Button>
                 </div>
             </div>
-        </div>
+        </Container>
     )
 }

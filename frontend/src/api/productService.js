@@ -1,20 +1,18 @@
-import { cartData, productsData } from "@/data/mockData"
-import { toast } from "sonner"
+import { api, query } from "./apiClient"
 
-export const fetchProducts = async () => {
-    // mock data
-    return {ok: true, data: productsData}
-}
+export const fetchProducts = ({ q, category, page = 0, size = 12 } = {}) =>
+  api(`/api/product?${query({ q, category, page, size })}`)
 
-export const fetchCart = async () => {
-  // mock data
-  return {ok: true, data: cartData}
-}
+export const fetchBestSellers = () => api("/api/product/get/best")
 
-export const addToCart = async (product) => {
-  toast.success("Add " + product.name + " from cart")
-}
+export const createProduct = (product) => api("/api/product", { method: "POST", body: product })
 
-export const removeFromCart = async (product) => {
-  toast.error("Remove " + product.name + " from cart")
+export const updateProduct = (id, product) => api(`/api/product/${id}`, { method: "PUT", body: product })
+
+export const deleteProduct = (id) => api(`/api/product/${id}`, { method: "DELETE" })
+
+export const uploadProductImage = (id, file) => {
+  const form = new FormData()
+  form.append("file", file)
+  return api(`/api/product/${id}/image`, { method: "POST", form })
 }

@@ -1,31 +1,44 @@
-import { DoorOpen, Home, LucideAlarmClock, LucideSquareArrowRightEnter, ShoppingBag } from "lucide-react"
-import { Link } from "react-router-dom"
-
-const navItems = [
-  {
-    to: '/', label: 'Home', icon: <Home />
-  },
-  {
-    to: '/products', label: 'Products', icon: <ShoppingBag />
-  },
-  {
-    to: '/signin', label: 'Sign In', icon: <LucideSquareArrowRightEnter />
-  }
-]
+import { Coffee, Home, LogIn, ShoppingBag, User } from "lucide-react"
+import { NavLink } from "react-router-dom"
+import { useAuth } from "@/context/auth"
+import { cn } from "@/lib/utils"
 
 export const BottomNavbar = () => {
+  const { hasUser } = useAuth()
+
+  const navItems = [
+    { to: "/", label: "Início", icon: Home },
+    { to: "/products", label: "Cardápio", icon: Coffee },
+    { to: "/checkout", label: "Carrinho", icon: ShoppingBag },
+    hasUser
+      ? { to: "/profile", label: "Conta", icon: User }
+      : { to: "/signin", label: "Entrar", icon: LogIn },
+  ]
+
   return (
-    <div className="md:hidden fixed bottom-0 backdrop-blur-md border-t w-full h-16 bg-primary/80 flex items-center justify-center">
-        <ul className="flex items-center gap-10">
-            {navItems.map((item) => (
-                <li key={item.to}>
-                    <Link to={item.to} className="flex flex-col items-center text-secondary hover:text-secondary/80 transition-colors duration-300">
-                        {item.icon}
-                        {item.label}
-                    </Link>
-                </li>
-            ))}
-        </ul>
-    </div>
+    <nav
+      aria-label="Navegação inferior"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+    >
+      <ul className="grid h-16 grid-cols-4">
+        {navItems.map(({ to, label, icon }) => {
+          const Icon = icon
+          return (
+          <li key={to}>
+            <NavLink
+              to={to}
+              end
+              className={({ isActive }) => cn(
+                "flex h-full flex-col items-center justify-center gap-1 text-xs transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Icon className="size-5" strokeWidth={1.75} />
+              {label}
+            </NavLink>
+          </li>
+        )})}
+      </ul>
+    </nav>
   )
 }

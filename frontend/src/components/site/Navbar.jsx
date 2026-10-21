@@ -1,63 +1,87 @@
-import { Coffee, Search, ShoppingCart } from "lucide-react"
+import { Coffee, Search, ShoppingBag, User } from "lucide-react"
 import { Input } from "../ui/input"
-import { useContext, useState } from "react"
-import { Link } from "react-router-dom"
-import { AuthContext } from "@/context/AuthContext"
+import { Button } from "../ui/button"
+import { useState } from "react"
+import { Link, NavLink, useNavigate } from "react-router-dom"
+import { useAuth } from "@/context/auth"
+import { Container } from "./Container"
+import { ThemeToggle } from "./ThemeToggle"
+import { cn } from "@/lib/utils"
+
+const navItems = [
+  { to: "/", label: "Início" },
+  { to: "/products", label: "Cardápio" },
+]
 
 export const Navbar = () => {
-  const [query, setQuery] = useState('')
-  const currentPath = window.location.pathname
-  const { hasUser } = useContext(AuthContext)
+  const [query, setQuery] = useState("")
+  const navigate = useNavigate()
+  const { hasUser } = useAuth()
 
-  const navItems = [{
-      to: '/', label: 'Home',
-      },
-      {
-        to: '/products', label: 'Products',
-      }, hasUser
-      ? {
-        to: '/profile', label: 'Profile'
-      }
-      : {
-        to: '/signin', label: 'Sign In',
-      }
-    ]
+  const handleSearch = (e) => {
+    e.preventDefault()
+    const q = query.trim()
+    navigate(q ? `/products?q=${encodeURIComponent(q)}` : "/products")
+  }
 
   return (
-    <header className="w-full flex items-center justify-between bg-white/70 px-10 py-5 sticky top-0 z-50 backdrop-blur-md border-b">
-      <div>
-        <Link className="flex items-center justify-between gap-5" to={"/"}>
-            <Coffee className="text-secondary"/>
-            <h1 className="font-semibold text-2xl ">CoffeeBabe</h1>     
+    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur-md">
+      <Container className="flex h-16 items-center justify-between gap-6">
+        <Link to="/" className="flex items-center gap-2.5 text-foreground">
+          <Coffee className="size-6 text-primary" strokeWidth={1.75} />
+          <span className="text-lg font-semibold tracking-tight">CoffeeBabe</span>
         </Link>
-      </div>
-      <nav className="max-md:hidden">
-        <ul className="flex items-center justify-between gap-10">
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <Link to={item.to} className={`${currentPath === item.to ? 'text-secondary-foreground' : 'text-secondary'}  hover:text-secondary/80 transition-colors duration-300`}>
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <div className="flex items-center gap-5 max-md:hidden">
-        <div>
-          <form className="relative" action="">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary"/>
+
+        <nav aria-label="Principal" className="max-md:hidden">
+          <ul className="flex items-center gap-8">
+            {navItems.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end
+                  className={({ isActive }) => cn(
+                    "text-sm transition-colors duration-200 hover:text-foreground",
+                    isActive ? "font-medium text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="flex items-center gap-1">
+          <form role="search" onSubmit={handleSearch} className="relative mr-2 max-lg:hidden">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <label htmlFor="nav-search" className="sr-only">Buscar no cardápio</label>
             <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for coffee..."
-            className="pl-9 w-56 bg-secondary/10 border-transparent focus-visible:bg-primary"
+              id="nav-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar café ou petisco"
+              className="h-10 w-60 rounded-full border-transparent bg-secondary pl-10"
             />
           </form>
+          <ThemeToggle />
+          <Button asChild variant="ghost" size="icon">
+            <Link to="/checkout" aria-label="Carrinho">
+              <ShoppingBag />
+            </Link>
+          </Button>
+          {hasUser ? (
+            <Button asChild variant="ghost" size="icon" className="max-md:hidden">
+              <Link to="/profile" aria-label="Minha conta">
+                <User />
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild className="ml-2 max-md:hidden">
+              <Link to="/signin">Entrar</Link>
+            </Button>
+          )}
         </div>
-        <Link className="relative hover:bg-secondary/10 p-3 rounded-sm transition-colors duration-300" to="/checkout">
-          <ShoppingCart className="text-secondary"/>
-        </Link>
-      </div>
+      </Container>
     </header>
   )
 }

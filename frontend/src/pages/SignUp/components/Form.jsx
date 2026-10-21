@@ -1,90 +1,44 @@
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signUpSchema } from "@/schemas/userSchema"
-import { Coffee, Eye, EyeClosed } from "lucide-react"
-import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { signUpUser } from "@/api/userService"
+import { AuthCard } from "@/components/site/AuthCard"
+import { FormField } from "@/components/site/FormField"
+import { toast } from "sonner"
 
 
 export const Form = () => {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({resolver: zodResolver(signUpSchema)})
-  const [seePassword, setSeePassword] = useState(false)
-  const [seeConfirmPassword, setSeeConfirmPassword] = useState(false)
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({resolver: zodResolver(signUpSchema)})
   const navigate = useNavigate()
 
   const onSubmit = async (data) => {
-    const status = await signUpUser(data)
-    if (status.ok) navigate("/signin")
-    
-    reset()
+    try {
+      await signUpUser(data)
+      toast.success("Conta criada. Entre para continuar.")
+      navigate("/signin")
+    } catch (error) {
+      // 400 sem erros de campo = e-mail ou nome de usuário já cadastrado
+      if (error.status === 400 && error.errors?.length === 0) toast.error("Já existe uma conta com esse e-mail ou nome de usuário.")
+      else if (error.status === 400) toast.error("Confira os dados informados.")
+      else if (error.status === 429) toast.error("Muitas tentativas. Aguarde alguns minutos e tente de novo.")
+      else toast.error("Não foi possível criar a conta agora. Tente novamente.")
+    }
   }
 
   return (
-    <section className="flex items-center justify-center py-16 bg-white/40">
-      <div className="w-full max-w-md bg-white p-10 rounded-4xl shadow-sm">
-        <div className="flex flex-col items-center gap-2 mb-10">
-          <Coffee className="text-secondary" />
-          <h2 className="text-3xl text-secondary-foreground font-semibold" >Sign Up</h2>
-          <p className="text-muted-foreground" >Create your account</p>
-        </div>
-
-        <div>
-          <form action={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="username">Username</Label>
-              <Input id="username" type="text" {...register("username")} className="bg-secondary/10 py-5" />
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.username?.message}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" {...register("email")} className="bg-secondary/10 py-5" />
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.email?.message}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                {seePassword 
-                ? <Eye onClick={() => setSeePassword(!seePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/> 
-                : <EyeClosed onClick={() => setSeePassword(!seePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/>}
-
-                <Input id="password" type={seePassword ? "text" : "password"} {...register("password")} className="bg-secondary/10 py-5" />
-              </div>
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.password?.message}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="confirmPassword">Confirm your password</Label>
-              <div className="relative">
-                {seeConfirmPassword 
-                ? <Eye onClick={() => setSeeConfirmPassword(!seeConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/> 
-                : <EyeClosed onClick={() => setSeeConfirmPassword(!seeConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/>}
-
-                <Input id="confirmPassword" type={seeConfirmPassword ? "text" : "password"} {...register("confirmPassword")} className="bg-secondary/10 py-5" />
-              </div>
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.confirmPassword?.message}
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-4">
-              <Button className="cursor-pointer bg-secondary w-full rounded-full py-5 hover:bg-secondary/80 transition-colors duration-300" type="submit">Create account</Button>
-              <span className="text-sm text-secondary">Already have an account? <Link to="/signin" className="text-blue-700 hover:text-blue-400 transition-colors duration-300">Sign In</Link></span>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
+    <AuthCard title="Criar conta" subtitle="Leva menos de um minuto.">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <FormField id="username" label="Nome de usuário" autoComplete="username" registration={register("username")} error={errors.username?.message} />
+        <FormField id="email" label="E-mail" type="email" autoComplete="email" registration={register("email")} error={errors.email?.message} />
+        <FormField id="password" label="Senha" type="password" autoComplete="new-password" registration={register("password")} error={errors.password?.message} />
+        <FormField id="confirmPassword" label="Confirme a senha" type="password" autoComplete="new-password" registration={register("confirmPassword")} error={errors.confirmPassword?.message} />
+        <Button className="mt-2 w-full" size="lg" type="submit" disabled={isSubmitting}>Criar conta</Button>
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          Já tem conta? <Link to="/signin" className="font-medium text-primary underline-offset-4 hover:underline">Entrar</Link>
+        </p>
+      </form>
+    </AuthCard>
   )
 }

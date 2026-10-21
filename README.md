@@ -1,404 +1,125 @@
-# CoffeeBabe
+<p align="center">
+  <img align src="frontend/public/favicon.svg" alt="Logo do CoffeeBabe" width="96" height="96">
+</p>
 
-Documentação oficial do projeto **CoffeeBabe**.
+<h1 align="center">CoffeeBabe</h1>
 
-## 1) Visão geral do software
+<p align="center">
+  Cardápio online de uma cafeteria: busque, monte o carrinho e peça para retirar ou receber em casa.
+</p>
 
-O CoffeeBabe é uma aplicação de e-commerce para cafeteria, com foco em:
+CoffeeBabe é um projeto de portfólio com uma API REST em Spring Boot e uma interface em React. A cafeteria é fictícia e o sistema roda só em localhost. Não há pagamento online: o cliente paga na retirada ou na entrega.
 
-- **Catálogo de produtos** (cafés, doces e itens relacionados).
-- **Autenticação de usuários**.
-- **Gestão de carrinho** (adicionar, diminuir quantidade e remover itens).
+## O que o sistema faz
 
-### Arquitetura em alto nível
+Quem visita o site pode:
 
-O sistema está dividido em três camadas principais:
+- ver o cardápio, buscar por nome e filtrar por categoria (café quente, café gelado, petiscos);
+- ver os mais vendidos, calculados a partir dos pedidos concluídos.
 
-1. **Frontend (React + Vite)**
-   - Renderiza a interface da loja.
-   - Faz chamadas HTTP para a API do backend.
-2. **Backend (Spring Boot)**
-   - Expõe endpoints REST para autenticação, usuários, produtos e carrinho.
-   - Contém regras de negócio (use cases) e camada de persistência.
-3. **Banco de dados (PostgreSQL)**
-   - Armazena usuários, produtos, carrinho e demais tabelas.
-   - Schema versionado com Flyway.
+Quem cria uma conta também pode:
 
----
+- montar o carrinho, com subtotal, imposto de 3% e total calculados pelo servidor;
+- finalizar o pedido para retirada na loja ou entrega (taxa fixa de R$ 20,00, com endereço);
+- acompanhar os próprios pedidos e cancelar enquanto estiverem `PENDING` ou `CONFIRMED`.
 
-## 2) Tecnologias utilizadas
+O administrador (`ADMIN`) cadastra, edita e remove produtos, envia a imagem de cada um e muda o status dos pedidos.
 
-### Backend
+| Papel | Acesso |
+|---|---|
+| Visitante | Catálogo e busca |
+| Cliente (`USER`) | Carrinho, pedidos e perfil |
+| Administrador (`ADMIN`) | Produtos (com upload de imagem) e status dos pedidos |
 
-- Java 25
-- Spring Boot 4
-- Spring Web MVC
-- Spring Data JPA
-- Flyway (migrations)
-- PostgreSQL
-- Lombok
-- Maven
+## Como rodar
 
-As dependências do backend estão em `backend/pom.xml`.
+Você só precisa de Docker e Docker Compose. Não é preciso instalar Java, Bun nem Postgres.
 
-### Frontend
-
-- React 19
-- Vite 8
-- React Router DOM
-- Tailwind CSS 4
-- Radix UI
-- React Hook Form + Zod
-- ESLint
-
-As dependências do frontend estão em `frontend/package.json`.
-
----
-
-## 3) Organização do backend
-
-Controllers expostos:
-
-- `AuthController` → base `/api/auth`
-- `UserController` → base `/api/user`
-- `ProductController` → base `/api/product`
-- `CartController` → base `/api/cart`
-
-Formato padrão de resposta da API:
-
-```json
-{
-  "success": true,
-  "message": "Mensagem da operação",
-  "data": {},
-  "errors": []
-}
+```bash
+cp .env.example .env        # defina POSTGRES_PASSWORD, JWT_SECRET e REDIS_PASSWORD
+docker compose up --build
 ```
 
-> Estrutura definida por `ApiResponseEntity<T>`.
+Gere um segredo para o `JWT_SECRET` com `openssl rand -base64 32`. Para criar o primeiro administrador, preencha `ADMIN_EMAIL` e `ADMIN_PASSWORD` no `.env`.
 
----
+| Serviço | Endereço |
+|---|---|
+| Frontend | http://localhost:5174 |
+| API | http://localhost:8080 |
+| Banco (Postgres) | 127.0.0.1:5433 |
+| Redis | só na rede interna do Compose |
 
-## 4) Rotas do backend (com request/response)
+Para parar, use `docker compose down`. Para apagar também os dados do banco, use `docker compose down -v`. Rode o `down -v` ao trocar para uma branch com migrations diferentes, porque o Flyway falha se o checksum não bater.
 
-> **Base URL local (exemplo):** `http://localhost:8080`
+## Tecnologias
 
-## 4.1 Auth (`/api/auth`)
+| Camada | O que usa |
+|---|---|
+| Backend | Java 25, Spring Boot 4, Spring Security, Spring Data JPA, Bean Validation, Lombok |
+| Banco | PostgreSQL com migrations Flyway; as imagens dos produtos ficam no próprio banco |
+| Frontend | React 19, Vite, Tailwind CSS v4, shadcn/ui, react-hook-form, zod, react-router |
+| Testes | JUnit 5, Mockito e Testcontainers no backend; Vitest e Testing Library no frontend |
+| Sessões | Redis, para os refresh tokens |
+| Infra | Docker Compose |
 
-### `POST /api/auth/signin`
-Realiza login e retorna token.
+## Arquitetura
 
-**Request body**
-```json
-{
-  "email": "user@email.com",
-  "password": "123456"
-}
+O backend segue a arquitetura hexagonal: as dependências apontam para dentro, de `adapter` e `infra` para `application` e `core`.
+
+```
+backend/src/main/java/com/coffeebabe/backend
+├── core/          entidades, casos de uso (portas de entrada), gateways (portas de saída)
+├── application/   implementação dos casos de uso
+├── adapter/       controllers REST, DTOs e adaptadores de persistência
+└── infra/         JPA, segurança, tratamento de erros, seeds e CORS
 ```
 
-**Response de sucesso (`202 Accepted`)**
-```json
-{
-  "success": true,
-  "message": "SignIn success",
-  "data": {
-    "token": "jwt-token-aqui"
-  },
-  "errors": []
-}
-```
+O frontend fica em `frontend/src`. Todas as chamadas à API passam por `api/apiClient.js`, e cada recurso tem um `*Service.js` fino por cima.
 
----
+## Segurança
 
-### `POST /api/auth/signup`
-Cria um novo usuário.
+- Sessão por JWT (HS256) de 15 minutos em cookie `HttpOnly`; o frontend nunca lê o token.
+- Renovação por refresh token rotativo, guardado no Redis só como hash. Reusar um token já trocado revoga todas as sessões da pessoa.
+- Rotas negadas por padrão, com regras por papel.
+- Cada cliente só enxerga o próprio carrinho e os próprios pedidos; o de outra pessoa responde `404`.
+- Senhas com BCrypt e limite de tentativas de login por IP e por e-mail (`429`).
+- Upload de imagem validado pela assinatura do arquivo (JPEG, PNG ou WebP, até 2 MB).
+- Segredos vêm de variáveis de ambiente, nunca do repositório.
 
-**Request body**
-```json
-{
-  "username": "john",
-  "email": "john@email.com",
-  "password": "123456"
-}
-```
+Os detalhes estão em [`specs/03-SECURITY.md`](specs/03-SECURITY.md).
 
-**Response de sucesso (`201 Created`)**
-```json
-{
-  "success": true,
-  "message": "SignUp success",
-  "data": null,
-  "errors": []
-}
-```
+## Desenvolvimento sem Docker
 
----
-
-## 4.2 User (`/api/user`)
-
-### `GET /api/user/get?id={uuid}`
-Busca usuário por ID.
-
-**Query param**
-- `id` (UUID)
-
-**Response de sucesso (`302 Found`)**
-```json
-{
-  "success": true,
-  "message": "User from id: 00000000-0000-0000-0000-000000000000",
-  "data": {
-    "username": "john",
-    "email": "john@email.com",
-    "role": "ADMIN"
-  },
-  "errors": []
-}
-```
-
----
-
-### `POST /api/user/create`
-Cria usuário via endpoint administrativo (role definida como `ADMIN` no controller).
-
-**Request body**
-```json
-{
-  "username": "adminUser",
-  "email": "admin@email.com",
-  "password": "123456"
-}
-```
-
-**Response de sucesso (`201 Created`)**
-```json
-{
-  "success": true,
-  "message": "adminUser created.",
-  "data": null,
-  "errors": []
-}
-```
-
----
-
-## 4.3 Product (`/api/product`)
-
-### `POST /api/product/create`
-Publica/cadastra produto.
-
-**Request body**
-```json
-{
-  "name": "Cappuccino",
-  "imageUrl": "https://site.com/cappuccino.jpg",
-  "description": "Café com leite vaporizado",
-  "price": 15.9
-}
-```
-
-**Response de sucesso (`201 Created`)**
-```json
-{
-  "success": true,
-  "message": "Cappuccino published successfully",
-  "data": null,
-  "errors": []
-}
-```
-
----
-
-### `GET /api/product/get/all`
-Lista todos os produtos.
-
-**Response de sucesso (`302 Found`)**
-```json
-{
-  "success": true,
-  "message": "Get all products successfully",
-  "data": [
-    {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "name": "Cappuccino",
-      "imageUrl": "https://site.com/cappuccino.jpg",
-      "description": "Café com leite vaporizado",
-      "price": 15.9
-    }
-  ],
-  "errors": []
-}
-```
-
----
-
-### `GET /api/product/get?id={uuid}`
-Busca produto por ID.
-
-**Query param**
-- `id` (UUID)
-
-**Response de sucesso (`302 Found`)**
-```json
-{
-  "success": true,
-  "message": "Product find successfully",
-  "data": {
-    "id": "11111111-1111-1111-1111-111111111111",
-    "name": "Cappuccino",
-    "imageUrl": "https://site.com/cappuccino.jpg",
-    "description": "Café com leite vaporizado",
-    "price": 15.9
-  },
-  "errors": []
-}
-```
-
----
-
-## 4.4 Cart (`/api/cart`)
-
-### `POST /api/cart/add`
-Adiciona produto ao carrinho do usuário.
-
-**Request body**
-```json
-{
-  "productId": "11111111-1111-1111-1111-111111111111",
-  "userId": "22222222-2222-2222-2222-222222222222"
-}
-```
-
-**Response de sucesso (`202 Accepted`)**
-```json
-{
-  "success": true,
-  "message": "11111111-1111-1111-1111-111111111111 added to cart",
-  "data": null,
-  "errors": []
-}
-```
-
----
-
-### `PATCH /api/cart/decrease?productId={uuid}&userId={uuid}`
-Diminui a quantidade do produto no carrinho.
-
-**Response de sucesso (`202 Accepted`)**
-```json
-{
-  "success": true,
-  "message": "11111111-1111-1111-1111-111111111111 decreased from cart",
-  "data": null,
-  "errors": []
-}
-```
-
----
-
-### `DELETE /api/cart/delete?productId={uuid}&userId={uuid}`
-Remove produto do carrinho.
-
-**Response de sucesso (`202 Accepted`)**
-```json
-{
-  "success": true,
-  "message": "11111111-1111-1111-1111-111111111111 removed from cart",
-  "data": null,
-  "errors": []
-}
-```
-
----
-
-### `GET /api/cart/get?userId={uuid}`
-Retorna itens do carrinho do usuário.
-
-**Response de sucesso (`302 Found`)**
-```json
-{
-  "success": true,
-  "message": "All items returned successfully",
-  "data": [
-    {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "name": "Cappuccino",
-      "imageUrl": "https://site.com/cappuccino.jpg",
-      "description": "Café com leite vaporizado",
-      "price": 15.9
-    }
-  ],
-  "errors": []
-}
-```
-
----
-
-## 5) Respostas de erro (padrão)
-
-O backend possui tratamento centralizado de exceções via `RestExceptionAdvice`.
-
-Exemplo de erro:
-
-```json
-{
-  "success": false,
-  "message": "User not found!",
-  "data": null,
-  "errors": [
-    "class com.coffeebabe.backend.core.exceptions.UserNotFoundException"
-  ]
-}
-```
-
-Possíveis status no tratamento:
-
-- `400 Bad Request`
-- `401 Unauthorized`
-- `404 Not Found`
-
----
-
-## 6) Configuração
-
-Arquivo principal: `backend/src/main/resources/application.properties`
-
-Propriedades relevantes:
-
-- `spring.datasource.url`
-- `spring.datasource.username`
-- `spring.datasource.password`
-- `spring.flyway.baseline-on-migrate`
-- `spring.flyway.schemas`
-- `security.jwt.token`
-- `security.jwt.token.expirationHours`
-
----
-
-## 7) Como executar localmente
-
-### Backend
+Backend (precisa de Postgres em `localhost:5432/coffeebabe` e Redis em `localhost:6379`):
 
 ```bash
 cd backend
-./mvnw spring-boot:run
+JWT_SECRET=$(openssl rand -base64 32) ./mvnw spring-boot:run
+./mvnw test
 ```
 
-### Frontend
+Frontend:
 
 ```bash
 cd frontend
-npm install
-npm run dev
+bun install
+bun run dev
+bun run test
 ```
 
----
+`BackendApplicationTests` usa Testcontainers e por isso exige Docker.
 
-## 8) Migrations de banco
+## Documentação
 
-As migrations SQL do backend estão em:
+As decisões e os requisitos do projeto estão em [`specs/`](specs):
 
-- `backend/src/main/resources/db/migration/V1__create-users-table.sql`
-- `backend/src/main/resources/db/migration/V2__create-table-products.sql`
-- `backend/src/main/resources/db/migration/V3__create-table-best-sellers.sql`
-- `backend/src/main/resources/db/migration/V4__create-table-cart.sql`
+- [Visão](specs/00-VISION.md) e [PRD](specs/01-PRD.md)
+- [Arquitetura](specs/02-ARCHITECTURE.md) e [decisões (ADRs)](specs/adr)
+- [Segurança](specs/03-SECURITY.md)
+- [Orquestração com Docker](specs/05-ORCHESTRATION.md)
+- [Design da interface](specs/06-DESIGN.md)
+- [Fluxo de Git](specs/04-GIT-FLOW.md)
+
+## Licença
+
+Veja o arquivo [LICENSE](LICENSE).

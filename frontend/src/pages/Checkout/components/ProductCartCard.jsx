@@ -1,27 +1,31 @@
-import { removeFromCart } from "@/api/productService"
 import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { formatPrice, resolveImage } from "@/lib/format"
+import { Minus, Plus, Trash2 } from "lucide-react"
 
-export const ProductCartCard = ({ id, name, image, price }) => {
-    const handleRemoveFromCart = () => {
-        removeFromCart({id, name, image, price})
-    }
+export const ProductCartCard = ({ product, quantity, lineTotal, onIncrease, onDecrease, onRemove, disabled }) => {
+    const { name, description, imageUrl } = product
+
     return (
-        <article className="flex flex-row justify-between bg-white/80 w-full rounded-4xl px-5 py-5 shadow-sm">
-            <div className="overflow-hidden flex gap-5">
-                <img className="h-25 w-25 rounded-2xl" src={image.url}  alt={name} />
-                <div>
-                    <h2 className="text-xl">{name}</h2>
-                    <p className="text-sm font-light text-secondary">{image.alt}</p>
+        <article className="flex items-center gap-4 rounded-2xl border bg-card p-3 pr-4 sm:gap-5">
+            <img className="size-20 shrink-0 rounded-xl bg-secondary object-cover sm:size-24" src={resolveImage(imageUrl)} alt={name} />
+            <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-medium">{name}</h2>
+                <p className="line-clamp-1 text-sm text-muted-foreground">{description}</p>
+                <div className="mt-2 flex items-center gap-2">
+                    <Button onClick={onDecrease} disabled={disabled} variant="outline" size="icon" aria-label={`Diminuir ${name}`} className="size-8">
+                        <Minus />
+                    </Button>
+                    <span aria-label={`Quantidade de ${name}`} className="w-6 text-center tabular-nums">{quantity}</span>
+                    <Button onClick={onIncrease} disabled={disabled} variant="outline" size="icon" aria-label={`Aumentar ${name}`} className="size-8">
+                        <Plus />
+                    </Button>
                 </div>
             </div>
-            <div className="flex flex-col justify-between items-end">
-                <Button onClick={handleRemoveFromCart} variant="destructive" className="cursor-pointer" >
-                    <Trash2 className="text-secondary" />
+            <div className="flex flex-col items-end gap-2">
+                <p className="font-medium tabular-nums">{formatPrice(lineTotal)}</p>
+                <Button onClick={onRemove} disabled={disabled} variant="ghost" size="icon" aria-label={`Remover ${name} do carrinho`} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 />
                 </Button>
-                <div>
-                    <h3 className="text-lg font-light text-secondary tracking-wide">$ {price.toFixed(2)}</h3>
-                </div>
             </div>
         </article>
     )

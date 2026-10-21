@@ -1,70 +1,44 @@
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signInSchema } from "@/schemas/userSchema"
-import { Coffee, Eye, EyeClosed } from "lucide-react"
-import { useContext, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { signInUser } from "@/api/userService"
-import { AuthContext } from "@/context/AuthContext"
+import { useAuth } from "@/context/auth"
+import { AuthCard } from "@/components/site/AuthCard"
+import { FormField } from "@/components/site/FormField"
+import { toast } from "sonner"
 
 
 export const Form = () => {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm({resolver: zodResolver(signInSchema)})
-  const [seePassword, setSeePassword] = useState(false)
+  const { register, handleSubmit, resetField, formState: { errors, isSubmitting } } = useForm({resolver: zodResolver(signInSchema)})
   const navigate = useNavigate()
-  const { setHasUser } = useContext(AuthContext)
+  const location = useLocation()
+  const { refreshUser } = useAuth()
 
   const onSubmit = async (data) => {
-    const status = await signInUser(data)
-    if (status.ok) {
-      setHasUser(true)
-      navigate("/")
+    try {
+      await signInUser(data)
+      await refreshUser()
+      navigate(location.state?.from ?? "/", { replace: true })
+    } catch (error) {
+      if (error.status === 401) toast.error("E-mail ou senha inválidos.")
+      else if (error.status === 429) toast.error("Muitas tentativas. Aguarde alguns minutos e tente de novo.")
+      else toast.error("Não foi possível entrar agora. Tente novamente.")
+      resetField("password")
     }
-      
-    reset()
   }
 
   return (
-    <section className="flex items-center justify-center py-16 bg-white/40">
-      <div className="w-full max-w-md bg-white p-10 rounded-4xl shadow-sm">
-        <div className="flex flex-col items-center gap-2 mb-10">
-          <Coffee className="text-secondary" />
-          <h2 className="text-3xl text-secondary-foreground font-semibold" >Sign In</h2>
-          <p className="text-muted-foreground" >Access your account</p>
-        </div>
-        <div>
-          <form action={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" {...register("email")} className="bg-secondary/10 py-5" />
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.email?.message}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="password">Senha</Label>
-              <div className="relative">
-                {seePassword 
-                ? <Eye onClick={() => setSeePassword(!seePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/> 
-                : <EyeClosed onClick={() => setSeePassword(!seePassword)} className="absolute right-3 top-1/2 -translate-y-1/2 h-4 cursor-pointer"/>}
-
-                <Input id="password" type={seePassword ? "text" : "password"} {...register("password")} className="bg-secondary/10 py-5" />
-              </div>
-              <p className="text-red-500 text-sm min-h-5">
-                {errors.password?.message}
-              </p>
-            </div>
-            
-            <div className="flex flex-col items-center gap-4">
-              <Button className="cursor-pointer bg-secondary w-full rounded-full py-5 hover:bg-secondary/80 transition-colors duration-300" type="submit">Sign in</Button>
-              <span className="text-sm text-secondary">New to CoffeeBabe? <Link to="/signup" className="text-blue-700 hover:text-blue-400 transition-colors duration-300">Create an account</Link></span>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
+    <AuthCard title="Entrar" subtitle="Acesse sua conta para fazer pedidos.">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <FormField id="email" label="E-mail" type="email" autoComplete="email" registration={register("email")} error={errors.email?.message} />
+        <FormField id="password" label="Senha" type="password" autoComplete="current-password" registration={register("password")} error={errors.password?.message} />
+        <Button className="mt-2 w-full" size="lg" type="submit" disabled={isSubmitting}>Entrar</Button>
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          Ainda não tem conta? <Link to="/signup" className="font-medium text-primary underline-offset-4 hover:underline">Criar conta</Link>
+        </p>
+      </form>
+    </AuthCard>
   )
 }
